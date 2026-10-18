@@ -98,6 +98,7 @@ O SQLite entra no roteiro na fase futura de backend (após a F8), junto com aute
   4. **Componentes** (`js/componentes/`) — peças reutilizadas (modal de confirmação, campos de formulário).
 - **Padrão de atualização:** estado único em memória → alterar o estado → salvar → redesenhar a seção atual. Previsível e sem otimizações prematuras.
 - **IDs:** `crypto.randomUUID()` (nativo do navegador).
+- **Tema visual:** paleta com azul (identidade), roxo (destaques) e vermelho (avisos e prioridade alta), definida em variáveis CSS em `css/estilo.css` (preferência confirmada pela mantenedora).
 - **Evolução preparada:** camadas + IDs estáveis + `schemaVersion` permitem acrescentar autenticação, banco compartilhado e instalação no celular (PWA) sem reescrever a aplicação.
 
 ## 5. Estrutura de pastas (alvo; começa pequena e cresce por fase)

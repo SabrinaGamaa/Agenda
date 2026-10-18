@@ -1,12 +1,18 @@
-/* Variáveis de cores e medidas (tema claro inicial) */
+/* Tema visual do projeto:
+   azul (identidade) + roxo (destaques) + vermelho (avisos e prioridade alta).
+   Todas as cores ficam nestas variáveis — mudar o tema é mexer só aqui. */
 :root {
-  --cor-fundo: #f5f6f8;
+  --cor-fundo: #f4f5fa;
   --cor-superficie: #ffffff;
-  --cor-texto: #1f2933;
-  --cor-texto-suave: #52606d;
-  --cor-primaria: #2b6cb0;
-  --raio: 8px;
+  --cor-texto: #23272f;
+  --cor-texto-suave: #5b6270;
+  --cor-azul: #2b6cb0;
+  --cor-roxo: #6b46c1;
+  --cor-vermelho: #c53030;
+  --gradiente-cabecalho: linear-gradient(135deg, #2b6cb0 0%, #6b46c1 100%);
+  --raio: 10px;
   --espaco: 16px;
+  --sombra: 0 1px 3px rgba(35, 39, 47, 0.12);
 }
 
 /* Reset básico: tudo cabe dentro da largura, sem margens indesejadas */
@@ -23,14 +29,22 @@ body {
 }
 
 .cabecalho {
-  background: var(--cor-primaria);
+  background: var(--gradiente-cabecalho);
   color: #ffffff;
-  padding: var(--espaco);
+  padding: calc(var(--espaco) * 1.25) var(--espaco);
+  border-bottom-left-radius: var(--raio);
+  border-bottom-right-radius: var(--raio);
 }
 
 .cabecalho h1 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.45rem;
+}
+
+.cabecalho-subtitulo {
+  margin: 4px 0 0;
+  opacity: 0.85;
+  font-size: 0.95rem;
 }
 
 #conteudo {
@@ -39,14 +53,139 @@ body {
   padding: var(--espaco);
 }
 
-.mensagem-inicial {
+/* Superfícies (cartões brancos sobre o fundo claro) */
+.cartao {
   background: var(--cor-superficie);
   border-radius: var(--raio);
-  padding: var(--espaco);
+  box-shadow: var(--sombra);
+  padding: calc(var(--espaco) * 1.25);
+}
+
+.cartao h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.subtitulo {
+  margin: 4px 0 var(--espaco);
+  color: var(--cor-texto-suave);
+  font-size: 0.9rem;
+}
+
+/* Lista de tarefas do dia */
+.lista-tarefas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.tarefa {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e4e6ee;
+  border-left: 5px solid #cbd2e0;
+  border-radius: calc(var(--raio) - 2px);
+  background: #fbfbfd;
+}
+
+.tarefa.prioridade-alta {
+  border-left-color: var(--cor-vermelho);
+}
+
+.tarefa.prioridade-media {
+  border-left-color: var(--cor-roxo);
+}
+
+.tarefa.prioridade-baixa {
+  border-left-color: var(--cor-azul);
+}
+
+.tarefa-esquerda {
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tarefa-horario {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.selo {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.selo-prioridade {
+  background: #e8eaf2;
   color: var(--cor-texto-suave);
 }
 
-.status-js {
+.prioridade-alta .selo-prioridade {
+  background: #fde8e8;
+  color: var(--cor-vermelho);
+}
+
+.prioridade-media .selo-prioridade {
+  background: #f0e9fb;
+  color: var(--cor-roxo);
+}
+
+.prioridade-baixa .selo-prioridade {
+  background: #e3eef9;
+  color: var(--cor-azul);
+}
+
+.tarefa-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tarefa-titulo {
+  font-weight: 600;
+}
+
+.tarefa-detalhes {
   color: var(--cor-texto-suave);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
+}
+
+/* Estado vazio (quando não há nada para mostrar) */
+.estado-vazio {
+  margin: 0;
+  padding: var(--espaco);
+  background: #f7f7fb;
+  border: 1px dashed #cbd2e0;
+  border-radius: var(--raio);
+  color: var(--cor-texto-suave);
+  text-align: center;
+}
+
+.aviso-desenvolvimento {
+  margin: var(--espaco) 0 0;
+  color: var(--cor-texto-suave);
+  font-size: 0.8rem;
+}
+
+/* No celular, o horário fica acima do conteúdo em vez de ao lado */
+@media (max-width: 560px) {
+  .tarefa {
+    flex-direction: column;
+  }
+
+  .tarefa-esquerda {
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
 }

@@ -1,11 +1,14 @@
 // Ponto de entrada do aplicativo "Meu Painel Pessoal".
-// Fase 0: apenas confirma que a página, o CSS e os módulos ES estão funcionando.
+// Fluxo geral do sistema: carregar os dados -> desenhar a tela a partir deles.
 
-console.log("Meu Painel Pessoal: aplicativo iniciado.");
+import { carregar } from "./dados/armazenamento.js";
+import { desenharTarefasDoDia } from "./telas/tarefas.js";
 
-const conteudo = document.getElementById("conteudo");
+const estado = carregar();
+console.log("Meu Painel Pessoal: aplicativo iniciado. Dados carregados:", estado);
 
-const aviso = document.createElement("p");
-aviso.className = "status-js";
-aviso.textContent = "JavaScript carregado e módulos ES funcionando.";
-conteudo.appendChild(aviso);
+// Exposto de propósito para você poder explorar no console do navegador.
+// Experimente digitar: estado.tarefas   ou   JSON.stringify(estado, null, 2)
+window.estado = estado;
+
+desenharTarefasDoDia(estado);

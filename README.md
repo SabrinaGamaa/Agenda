@@ -6,7 +6,7 @@ O plano completo do projeto (fases, modelo de dados, regras e critérios de conc
 
 ## Situação atual
 
-**Fase 0 — estrutura inicial.** A página já abre e o JavaScript carrega; as funcionalidades entram uma a uma nas próximas fases.
+**Fase 1 em andamento — lista do dia (somente leitura).** O navegador já guarda os dados (`localStorage`) e a tela mostra as tarefas de hoje a partir deles, com dados fictícios de exemplo. Criação, edição e exclusão chegam nos próximos passos.
 
 ## Como abrir o projeto
 
@@ -42,8 +42,10 @@ Depois abra o endereço mostrado pelo comando (geralmente `http://localhost:3000
 
 > Dica: se o `npx` não funcionar no PowerShell por causa de política de execução, use `npx.cmd serve .`.
 
-## Como testar (Fase 0)
+## Como testar (passo atual)
 
-1. Abra a página pelo servidor local (opção A, B ou C acima).
-2. Verifique que aparecem o título **Meu Painel Pessoal** e a mensagem "JavaScript carregado e módulos ES funcionando.".
-3. Abra o console do navegador (`F12` → Console): não deve haver erros vermelhos, e deve aparecer a mensagem "Meu Painel Pessoal: aplicativo iniciado.".
+1. Abra pela URL do servidor local (opções acima).
+2. Deve aparecer o cartão "Tarefas de hoje" com a data por extenso e três tarefas fictícias de exemplo, cada uma com horário inicial–final, categoria, duração e prioridade (a cor da borda esquerda indica a prioridade).
+3. Recarregue a página: as tarefas continuam iguais (foram salvas pelo navegador).
+4. No console (`F12`): "Meu Painel Pessoal: aplicativo iniciado." e nenhum erro. Experimente digitar `estado.tarefas` para ver os dados brutos.
+5. F12 → aba Application (Chrome/Edge) → Local Storage → chave `painel.dados` com o JSON do estado.
