@@ -1,17 +1,53 @@
-// Tela de tarefas: desenha a lista do dia a partir do estado.
-// Por enquanto é somente leitura; criação, edição e exclusão chegam nos próximos passos.
+// Tela de tarefas: formulário de criação + lista do dia.
 
-import { hojeISO, formatarDataLonga, somarMinutos, formatarDuracao } from "../regras/datas.js";
+import { hojeISO, formatarData, formatarDataLonga, somarMinutos, formatarDuracao } from "../regras/datas.js";
+import { criarTarefa, tarefasDoDia } from "../regras/tarefas.js";
+import { criarFormularioTarefa } from "../componentes/formulario-tarefa.js";
+import { salvar } from "../dados/armazenamento.js";
 
-export function desenharTarefasDoDia(estado) {
+export function desenharTarefasDoDia(estado, mensagem = null) {
   const conteudo = document.getElementById("conteudo");
   conteudo.innerHTML = ""; // redesenho simples: limpa tudo e monta de novo a partir do estado
 
-  const dataDeHoje = hojeISO();
-  const tarefasDoDia = estado.tarefas.filter((tarefa) => tarefa.data === dataDeHoje);
+  conteudo.appendChild(criarCartaoDeNovaTarefa(estado));
+  conteudo.appendChild(criarCartaoDaLista(estado, mensagem));
+}
 
-  const secao = document.createElement("section");
-  secao.className = "cartao";
+function criarCartaoDeNovaTarefa(estado) {
+  const cartao = document.createElement("section");
+  cartao.className = "cartao";
+
+  const titulo = document.createElement("h2");
+  titulo.textContent = "Nova tarefa";
+  cartao.appendChild(titulo);
+
+  const formulario = criarFormularioTarefa({
+    categorias: estado.config.categoriasTarefas,
+    aoSalvar: (campos) => {
+      const tarefa = criarTarefa(campos);
+      estado.tarefas.push(tarefa);
+      salvar(estado);
+      console.log("Tarefa criada:", tarefa);
+
+      // Se a tarefa não for de hoje, avisamos por que ela não aparece na lista.
+      const mensagem =
+        tarefa.data === hojeISO()
+          ? "Tarefa adicionada!"
+          : `Tarefa salva para ${formatarData(tarefa.data)} — ela não aparece na lista de hoje.`;
+      desenharTarefasDoDia(estado, mensagem);
+    }
+  });
+
+  cartao.appendChild(formulario);
+  return cartao;
+}
+
+function criarCartaoDaLista(estado, mensagem) {
+  const dataDeHoje = hojeISO();
+  const tarefasDeHoje = tarefasDoDia(estado, dataDeHoje);
+
+  const cartao = document.createElement("section");
+  cartao.className = "cartao";
 
   const titulo = document.createElement("h2");
   titulo.textContent = "Tarefas de hoje";
@@ -20,29 +56,36 @@ export function desenharTarefasDoDia(estado) {
   subtitulo.className = "subtitulo";
   subtitulo.textContent = formatarDataLonga(dataDeHoje);
 
-  secao.appendChild(titulo);
-  secao.appendChild(subtitulo);
+  cartao.appendChild(titulo);
+  cartao.appendChild(subtitulo);
 
-  if (tarefasDoDia.length === 0) {
+  if (mensagem) {
+    const sucesso = document.createElement("p");
+    sucesso.className = "mensagem-sucesso";
+    sucesso.textContent = mensagem;
+    cartao.appendChild(sucesso);
+  }
+
+  if (tarefasDeHoje.length === 0) {
     const vazio = document.createElement("p");
     vazio.className = "estado-vazio";
-    vazio.textContent = "Nenhuma tarefa para hoje. A criação de tarefas chega no próximo passo.";
-    secao.appendChild(vazio);
+    vazio.textContent = "Nenhuma tarefa para hoje. Crie uma no formulário acima.";
+    cartao.appendChild(vazio);
   } else {
     const lista = document.createElement("ul");
     lista.className = "lista-tarefas";
-    for (const tarefa of tarefasDoDia) {
+    for (const tarefa of tarefasDeHoje) {
       lista.appendChild(criarItemTarefa(tarefa));
     }
-    secao.appendChild(lista);
+    cartao.appendChild(lista);
   }
 
   const aviso = document.createElement("p");
   aviso.className = "aviso-desenvolvimento";
-  aviso.textContent = "Versão em desenvolvimento: por enquanto a lista é somente leitura.";
-  secao.appendChild(aviso);
+  aviso.textContent = "Versão em desenvolvimento: edição, conclusão e exclusão chegam nos próximos passos.";
+  cartao.appendChild(aviso);
 
-  conteudo.appendChild(secao);
+  return cartao;
 }
 
 function criarItemTarefa(tarefa) {

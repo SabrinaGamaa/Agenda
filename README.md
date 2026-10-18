@@ -6,7 +6,7 @@ O plano completo do projeto (fases, modelo de dados, regras e critérios de conc
 
 ## Situação atual
 
-**Fase 1 em andamento — lista do dia (somente leitura).** O navegador já guarda os dados (`localStorage`) e a tela mostra as tarefas de hoje a partir deles, com dados fictícios de exemplo. Criação, edição e exclusão chegam nos próximos passos.
+**Fase 1 em andamento — criar e listar tarefas do dia.** Os dados ficam no navegador (`localStorage`); já é possível criar tarefas pelo formulário (com horário final calculado) e vê-las na lista do dia. Edição, conclusão e exclusão chegam nos próximos passos.
 
 ## Como abrir o projeto
 
@@ -45,7 +45,9 @@ Depois abra o endereço mostrado pelo comando (geralmente `http://localhost:3000
 ## Como testar (passo atual)
 
 1. Abra pela URL do servidor local (opções acima).
-2. Deve aparecer o cartão "Tarefas de hoje" com a data por extenso e três tarefas fictícias de exemplo, cada uma com horário inicial–final, categoria, duração e prioridade (a cor da borda esquerda indica a prioridade).
-3. Recarregue a página: as tarefas continuam iguais (foram salvas pelo navegador).
-4. No console (`F12`): "Meu Painel Pessoal: aplicativo iniciado." e nenhum erro. Experimente digitar `estado.tarefas` para ver os dados brutos.
-5. F12 → aba Application (Chrome/Edge) → Local Storage → chave `painel.dados` com o JSON do estado.
+2. No cartão "Nova tarefa", preencha título, data (hoje), horário e duração — o texto abaixo mostra o **horário final calculado** enquanto você digita (com "(dia seguinte)" quando atravessa a meia-noite).
+3. Clique em "Adicionar tarefa": ela aparece na lista de hoje, com borda colorida pela prioridade.
+4. Recarregue a página: a tarefa continua lá (foi salva pelo navegador).
+5. Teste as validações: tente salvar sem título, sem horário ou com duração vazia — deve aparecer uma mensagem de erro em português.
+6. Crie uma tarefa para outra data: um aviso explica que ela não aparece na lista de hoje.
+7. Console (`F12`): sem erros; digite `estado.tarefas` para conferir os dados salvos.

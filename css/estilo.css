@@ -9,6 +9,7 @@
   --cor-azul: #2b6cb0;
   --cor-roxo: #6b46c1;
   --cor-vermelho: #c53030;
+  --cor-sucesso: #2f855a;
   --gradiente-cabecalho: linear-gradient(135deg, #2b6cb0 0%, #6b46c1 100%);
   --raio: 10px;
   --espaco: 16px;
@@ -187,5 +188,102 @@ body {
     flex-direction: row;
     align-items: center;
     gap: 8px;
+  }
+}
+
+/* Espaço entre cartões empilhados */
+.cartao + .cartao {
+  margin-top: var(--espaco);
+}
+
+/* Formulário de nova tarefa */
+.formulario-tarefa {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: var(--espaco);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campo-largo {
+  grid-column: 1 / -1;
+}
+
+.campo-rotulo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+}
+
+.formulario-tarefa input,
+.formulario-tarefa select {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid #cbd2e0;
+  border-radius: calc(var(--raio) - 3px);
+  background: #ffffff;
+  color: var(--cor-texto);
+}
+
+.formulario-tarefa input:focus,
+.formulario-tarefa select:focus {
+  outline: 2px solid var(--cor-azul);
+  outline-offset: 1px;
+  border-color: var(--cor-azul);
+}
+
+.previa-horario {
+  margin: 0;
+  color: var(--cor-texto-suave);
+  font-size: 0.875rem;
+}
+
+.aviso-inconsistencia {
+  margin: 0;
+  color: var(--cor-vermelho);
+  font-size: 0.875rem;
+}
+
+.erro-formulario {
+  margin: 0;
+  padding: 10px 12px;
+  background: #fde8e8;
+  color: var(--cor-vermelho);
+  border-radius: calc(var(--raio) - 3px);
+  font-size: 0.875rem;
+}
+
+.mensagem-sucesso {
+  margin: 0 0 var(--espaco);
+  padding: 10px 12px;
+  background: #e6f4ea;
+  color: var(--cor-sucesso);
+  border-radius: calc(var(--raio) - 3px);
+  font-size: 0.9rem;
+}
+
+.botao-principal {
+  font: inherit;
+  font-weight: 600;
+  padding: 10px 16px;
+  border: none;
+  border-radius: calc(var(--raio) - 3px);
+  background: var(--gradiente-cabecalho);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.botao-principal:hover {
+  filter: brightness(0.94);
+}
+
+@media (max-width: 560px) {
+  .formulario-tarefa {
+    grid-template-columns: 1fr;
   }
 }
