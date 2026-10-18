@@ -287,3 +287,140 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Botões secundários e grupo de botões */
+.grupo-botoes {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.botao-secundario {
+  font: inherit;
+  font-weight: 600;
+  padding: 10px 16px;
+  border: 1px solid #cbd2e0;
+  border-radius: calc(var(--raio) - 3px);
+  background: #ffffff;
+  color: var(--cor-texto);
+  cursor: pointer;
+}
+
+.botao-secundario:hover {
+  background: #f1f2f8;
+}
+
+.botao-principal-perigo {
+  font: inherit;
+  font-weight: 600;
+  padding: 10px 16px;
+  border: none;
+  border-radius: calc(var(--raio) - 3px);
+  background: var(--cor-vermelho);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.botao-principal-perigo:hover {
+  filter: brightness(0.94);
+}
+
+/* Ações de cada tarefa (concluir/reabrir, editar, excluir) */
+.tarefa-acoes {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.botao-acao {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border: 1px solid #cbd2e0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+}
+
+.botao-acao:hover {
+  background: #f1f2f8;
+  color: var(--cor-texto);
+}
+
+.botao-acao-perigo {
+  color: var(--cor-vermelho);
+  border-color: #f3c1c1;
+}
+
+.botao-acao-perigo:hover {
+  background: #fde8e8;
+  color: var(--cor-vermelho);
+}
+
+/* Tarefa concluída */
+.tarefa.concluida {
+  opacity: 0.7;
+}
+
+.tarefa.concluida .tarefa-titulo {
+  text-decoration: line-through;
+  color: var(--cor-texto-suave);
+}
+
+/* Modal (elemento nativo <dialog>) */
+.modal {
+  border: none;
+  border-radius: var(--raio);
+  padding: calc(var(--espaco) * 1.25);
+  width: min(520px, 92vw);
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  box-shadow: 0 12px 40px rgba(35, 39, 47, 0.3);
+}
+
+.modal::backdrop {
+  background: rgba(35, 39, 47, 0.45);
+}
+
+.modal-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco);
+  margin-bottom: var(--espaco);
+}
+
+.modal-topo h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.modal-fechar {
+  font: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  color: var(--cor-texto-suave);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.modal-fechar:hover {
+  background: #f1f2f8;
+  color: var(--cor-texto);
+}
+
+.modal-texto {
+  margin: 0;
+}
+
+.modal .formulario-tarefa {
+  margin-top: 0;
+}

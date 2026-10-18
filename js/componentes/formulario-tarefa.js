@@ -1,10 +1,16 @@
-// Componente reutilizável: formulário para criar uma tarefa.
-// Recebe as categorias disponíveis e a função "aoSalvar",
-// chamada com os campos já validados.
+// Componente reutilizável: formulário de tarefa.
+// É usado para criar (dentro do cartão "Nova tarefa") e para editar
+// (dentro de uma janela modal), graças às opções que recebe.
 
 import { hojeISO, somarMinutos } from "../regras/datas.js";
 
-export function criarFormularioTarefa({ categorias, aoSalvar }) {
+export function criarFormularioTarefa({
+  categorias,
+  aoSalvar,
+  valoresIniciais = null,
+  rotuloBotao = "Adicionar tarefa",
+  aoCancelar = null
+}) {
   const formulario = document.createElement("form");
   formulario.className = "formulario-tarefa";
   formulario.noValidate = true; // validação nativa desligada: usamos mensagens nossas, em português
@@ -40,11 +46,9 @@ export function criarFormularioTarefa({ categorias, aoSalvar }) {
     opcao.textContent = rotulo;
     prioridade.appendChild(opcao);
   }
-  prioridade.value = "media";
 
   const data = document.createElement("input");
   data.type = "date";
-  data.value = hojeISO();
 
   const horaInicio = document.createElement("input");
   horaInicio.type = "time";
@@ -54,7 +58,23 @@ export function criarFormularioTarefa({ categorias, aoSalvar }) {
   duracaoMinutos.min = "5";
   duracaoMinutos.max = "1440";
   duracaoMinutos.step = "5";
-  duracaoMinutos.value = "30";
+
+  // Valores: modo edição (tarefa existente) ou padrões do modo criação.
+  if (valoresIniciais) {
+    titulo.value = valoresIniciais.titulo ?? "";
+    descricao.value = valoresIniciais.descricao ?? "";
+    if (valoresIniciais.categoria) {
+      categoria.value = valoresIniciais.categoria;
+    }
+    prioridade.value = valoresIniciais.prioridade ?? "media";
+    data.value = valoresIniciais.data ?? hojeISO();
+    horaInicio.value = valoresIniciais.horaInicio ?? "";
+    duracaoMinutos.value = String(valoresIniciais.duracaoMinutos ?? 30);
+  } else {
+    prioridade.value = "media";
+    data.value = hojeISO();
+    duracaoMinutos.value = "30";
+  }
 
   // --- Mensagens (prévia do horário final, aviso e erros) ---
 
@@ -69,10 +89,25 @@ export function criarFormularioTarefa({ categorias, aoSalvar }) {
   erro.className = "erro-formulario campo-largo";
   erro.hidden = true;
 
-  const botao = document.createElement("button");
-  botao.type = "submit";
-  botao.className = "botao-principal campo-largo";
-  botao.textContent = "Adicionar tarefa";
+  // --- Botões ---
+
+  const grupoBotoes = document.createElement("div");
+  grupoBotoes.className = "grupo-botoes campo-largo";
+
+  if (aoCancelar) {
+    const cancelar = document.createElement("button");
+    cancelar.type = "button";
+    cancelar.className = "botao-secundario";
+    cancelar.textContent = "Cancelar";
+    cancelar.addEventListener("click", () => aoCancelar());
+    grupoBotoes.appendChild(cancelar);
+  }
+
+  const botaoSalvar = document.createElement("button");
+  botaoSalvar.type = "submit";
+  botaoSalvar.className = "botao-principal";
+  botaoSalvar.textContent = rotuloBotao;
+  grupoBotoes.appendChild(botaoSalvar);
 
   // --- Montagem: cada campo dentro de um rótulo, na ordem desejada ---
 
@@ -86,7 +121,7 @@ export function criarFormularioTarefa({ categorias, aoSalvar }) {
   formulario.appendChild(previa);
   formulario.appendChild(aviso);
   formulario.appendChild(erro);
-  formulario.appendChild(botao);
+  formulario.appendChild(grupoBotoes);
 
   // --- Comportamentos ---
 
