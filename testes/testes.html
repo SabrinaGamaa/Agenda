@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Testes Automatizados — Meu Painel Pessoal</title>
+  <link rel="stylesheet" href="../css/tema-escuro.css">
+  <style>
+    .teste-suite { margin-bottom: var(--espaco); }
+    .teste-suite h3 { margin: 0 0 var(--espaco-pequeno); font-size: 1rem; color: var(--texto-suave); text-transform: uppercase; letter-spacing: 0.05em; }
+    .teste-item { display: flex; align-items: center; gap: var(--espaco-pequeno); padding: var(--espaco-pequeno); background: var(--bg-input); border: 1px solid var(--borda); border-radius: var(--raio-pequeno); margin-bottom: 6px; font-size: 0.85rem; }
+    .teste-item.pass { border-color: rgba(47,133,90,.3); }
+    .teste-item.fail { border-color: rgba(139,42,42,.3); background: var(--critico-suave); }
+    .teste-status { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+    .teste-status.pass { background: #2f855a; color: #fff; }
+    .teste-status.fail { background: var(--critico); color: #fff; }
+    .teste-nome { flex: 1; }
+    .teste-erro { font-family: monospace; font-size: 0.7rem; color: var(--critico); margin-top: 4px; padding: 4px 8px; background: var(--bg); border-radius: 4px; white-space: pre-wrap; }
+    .teste-resumo { display: flex; gap: var(--espaco); padding: var(--espaco); background: var(--bg-elevado); border: 1px solid var(--borda); border-radius: var(--raio); margin-bottom: var(--espaco); flex-wrap: wrap; }
+    .teste-resumo-item { display: flex; align-items: center; gap: 6px; font-weight: 500; }
+    .teste-resumo-total { color: var(--texto-suave); }
+    .teste-resumo-pass { color: #4ade80; }
+    .teste-resumo-fail { color: var(--critico); }
+    .teste-tempo { color: var(--texto-fraco); font-size: 0.8rem; }
+    .btn-executar { margin-bottom: var(--espaco); }
+  </style>
+</head>
+<body>
+  <header class="cabecalho">
+    <h1>Testes Automatizados</h1>
+    <p class="cabecalho-subtitulo">Suites de regressão para regras, armazenamento e componentes</p>
+  </header>
+
+  <main id="conteudo" style="max-width: 900px; margin: 0 auto; padding: var(--espaco);">
+    <div class="cartao">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: var(--espaco); flex-wrap: wrap; margin-bottom: var(--espaco);">
+        <h2 style="margin: 0;">Executar testes</h2>
+        <button class="botao-principal btn-executar" id="btn-executar" type="button">▶ Executar todos os testes</button>
+      </div>
+
+      <div class="teste-resumo" id="resumo" style="display: none;">
+        <span class="teste-resumo-item teste-resumo-total">Total: <span id="total">0</span></span>
+        <span class="teste-resumo-item teste-resumo-pass">Passou: <span id="passou">0</span></span>
+        <span class="teste-resumo-item teste-resumo-fail">Falhou: <span id="falhou">0</span></span>
+        <span class="teste-resumo-item teste-tempo">Tempo: <span id="tempo">0</span>ms</span>
+      </div>
+
+      <div id="resultados"></div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { inicializarBotaoExecutar } from "./testes.js";
+    // Importa as suites para que se registrem no window.__TEST_SUITES
+    import "./datas.test.js";
+    import "./tarefas.test.js";
+    import "./armazenamento.test.js";
+
+    document.addEventListener("DOMContentLoaded", () => {
+      inicializarBotaoExecutar();
+    });
+  </script>
+</body>
+</html>

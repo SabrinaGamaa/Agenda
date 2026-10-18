@@ -6,7 +6,7 @@ O plano completo do projeto (fases, modelo de dados, regras e critérios de conc
 
 ## Situação atual
 
-**Fase 1 em andamento — redesign completo (tema escuro + calendário home).** Tela inicial com calendário mensal (bolinhas por prioridade) + painel lateral (próximos prazos, top categorias, resumo da semana). Lista de tarefas com botões-ícone, linha fina de prioridade, concluídas com opacity. Navegação Home ↔ Dia funcionando. O próximo passo traz exportação/importação dos dados e os primeiros testes automatizados.
+**Fase 1 completa — redesign + export/import + testes automatizados.** Tela inicial com calendário mensal + painel lateral. Lista de tarefas com botões-ícone, navegação Home ↔ Dia. Exporta/importa JSON completo. Testes automatizados em `testes/testes.html`.
 
 ## Como abrir o projeto
 
@@ -54,5 +54,8 @@ Depois abra o endereço mostrado pelo comando (geralmente `http://localhost:3000
 8. **Concluir** (ícone ✓): tarefa vai para o fim, `opacity: .35` + risco fino; **Reabrir** (↺) volta pro lugar.
 9. **Editar** (✎): abre modal; **Excluir** (🗑): pede confirmação.
 10. **Volta ao Home** (botão ⌂): bolinhas do calendário e painel lateral atualizados.
-11. **Recarregue**: volta pro Home (hoje); dados intactos.
-12. Console (`F12`): sem erros.
+11. **Exportar**: botão no cabeçalho → "Exportar JSON" → baixa `painel-backup-YYYY-MM-DD.json`.
+12. **Importar**: botão no cabeçalho → "Importar JSON" → seleciona arquivo → confirma → recarrega dados.
+13. **Testes automatizados**: abra `http://localhost:5500/testes/testes.html` → clique "▶ Executar todos os testes" → veja ✅/❌ por suite.
+14. **Recarregue**: volta pro Home (hoje); dados intactos.
+15. Console (`F12`): sem erros.
