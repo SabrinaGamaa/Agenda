@@ -1,4 +1,4 @@
-// Regras de negócio das tarefas: criar, consultar, concluir, editar e excluir.
+// Regras de negócio das tarefas: criar, consultar, concluir, editar, excluir e ordenar.
 // Ficam separadas da tela para serem testáveis e reaproveitadas.
 
 // Cria uma tarefa nova (ainda não salva) a partir dos campos do formulário.
@@ -80,4 +80,18 @@ export function excluirTarefa(estado, tarefaId) {
   if (indice === -1) return null;
   const [removida] = estado.tarefas.splice(indice, 1);
   return removida;
+}
+
+// Ordena as tarefas de um dia para exibição:
+// primeiro as pendentes (da mais cedo para a mais tarde) e, no fim, as concluídas.
+// Devolve uma lista nova: a ordem original (do estado) não é alterada.
+export function ordenarTarefasDoDia(tarefas, dataISO) {
+  return [...tarefas].sort((a, b) => {
+    const concluidaA = estaConcluida(a, dataISO) ? 1 : 0;
+    const concluidaB = estaConcluida(b, dataISO) ? 1 : 0;
+    if (concluidaA !== concluidaB) {
+      return concluidaA - concluidaB; // pendentes primeiro
+    }
+    return a.horaInicio.localeCompare(b.horaInicio); // "HH:MM" ordena como texto
+  });
 }

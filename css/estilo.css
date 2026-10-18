@@ -424,3 +424,29 @@ body {
 .modal .formulario-tarefa {
   margin-top: 0;
 }
+
+/* Navegação entre dias (barra do cartão de tarefas) */
+.navegacao-dias {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 var(--espaco);
+  flex-wrap: wrap;
+}
+
+.navegacao-rotulo {
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+  color: var(--cor-texto-suave);
+}
+
+.botao-acao-destaque {
+  color: var(--cor-roxo);
+  border-color: #d8c7f2;
+}
+
+.botao-acao-destaque:hover {
+  background: #f0e9fb;
+  color: var(--cor-roxo);
+}

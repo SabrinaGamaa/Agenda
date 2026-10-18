@@ -9,7 +9,8 @@ export function criarFormularioTarefa({
   aoSalvar,
   valoresIniciais = null,
   rotuloBotao = "Adicionar tarefa",
-  aoCancelar = null
+  aoCancelar = null,
+  dataPadrao = null
 }) {
   const formulario = document.createElement("form");
   formulario.className = "formulario-tarefa";
@@ -67,12 +68,12 @@ export function criarFormularioTarefa({
       categoria.value = valoresIniciais.categoria;
     }
     prioridade.value = valoresIniciais.prioridade ?? "media";
-    data.value = valoresIniciais.data ?? hojeISO();
+    data.value = valoresIniciais.data ?? dataPadrao ?? hojeISO();
     horaInicio.value = valoresIniciais.horaInicio ?? "";
     duracaoMinutos.value = String(valoresIniciais.duracaoMinutos ?? 30);
   } else {
     prioridade.value = "media";
-    data.value = hojeISO();
+    data.value = dataPadrao ?? hojeISO();
     duracaoMinutos.value = "30";
   }
 

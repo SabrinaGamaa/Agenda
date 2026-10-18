@@ -6,7 +6,7 @@ O plano completo do projeto (fases, modelo de dados, regras e critérios de conc
 
 ## Situação atual
 
-**Fase 1 em andamento — tarefas do dia completas.** Criar, editar, concluir/reabrir e excluir, com os dados salvos no navegador (`localStorage`). O próximo passo traz a navegação entre dias e a ordenação da lista.
+**Fase 1 em andamento — tarefas do dia: criar, editar, concluir/reabrir, excluir e navegar entre dias.** Os dados ficam no navegador (`localStorage`); a lista ordena os pendentes por horário e joga as concluídas para o fim. O próximo passo traz exportação/importação dos dados e os primeiros testes automatizados.
 
 ## Como abrir o projeto
 
@@ -45,9 +45,9 @@ Depois abra o endereço mostrado pelo comando (geralmente `http://localhost:3000
 ## Como testar (passo atual)
 
 1. Abra pela URL do servidor local (opções acima).
-2. Crie uma tarefa pelo formulário e observe a prévia do horário final.
-3. Clique **Concluir** em uma tarefa: o título fica riscado e aparece a mensagem "Tarefa concluída!". Clique **Reabrir** para desfazer.
-4. Clique **Editar**: abre uma janela com os dados preenchidos; mude o que quiser e salve — ou cancele sem alterar nada.
-5. Clique **Excluir**: a janela pede confirmação antes de apagar de vez.
-6. Recarregue a página: tudo permanece como estava (incluindo o riscado das concluídas).
+2. No cartão da lista, use **‹ anterior** e **próximo ›** para navegar entre os dias; a data muda por extenso. Fora de hoje, aparece o botão **Hoje** para voltar (roxo).
+3. Crie uma tarefa para outro dia: o formulário já sugere a data do dia que está na tela, e a mensagem avisa que a tarefa não está na lista atual.
+4. Conclua uma tarefa: ela vai para o **fim** da lista, riscada (os pendentes ficam em ordem de horário, do mais cedo ao mais tarde).
+5. Edite uma tarefa mudando a data: a mensagem avisa que ela foi para outro dia.
+6. Recarregue a página: a visão volta para hoje e os dados continuam salvos.
 7. Console (`F12`): sem erros.

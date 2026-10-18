@@ -1,10 +1,11 @@
-// Tela de tarefas: formulário de criação + lista do dia com ações
-// (concluir/reabrir, editar e excluir).
+// Tela de tarefas: formulário de criação + lista de um dia, com ações
+// (concluir/reabrir, editar, excluir) e navegação entre dias.
 
-import { hojeISO, formatarData, formatarDataLonga, somarMinutos, formatarDuracao } from "../regras/datas.js";
+import { hojeISO, somarDias, formatarData, formatarDataLonga, somarMinutos, formatarDuracao } from "../regras/datas.js";
 import {
   criarTarefa,
   tarefasDoDia,
+  ordenarTarefasDoDia,
   estaConcluida,
   alternarConclusao,
   atualizarTarefa,
@@ -13,6 +14,10 @@ import {
 import { criarFormularioTarefa } from "../componentes/formulario-tarefa.js";
 import { abrirModal } from "../componentes/modal.js";
 import { salvar } from "../dados/armazenamento.js";
+
+// Dia que está sendo exibido na lista. Começa em hoje e só muda pelos
+// botões de navegação. Não é salvo: ao recarregar a página, voltamos para hoje.
+let dataVisualizada = hojeISO();
 
 export function desenharTarefasDoDia(estado, mensagem = null) {
   const conteudo = document.getElementById("conteudo");
@@ -32,17 +37,18 @@ function criarCartaoDeNovaTarefa(estado) {
 
   const formulario = criarFormularioTarefa({
     categorias: estado.config.categoriasTarefas,
+    dataPadrao: dataVisualizada, // sugere a data do dia que está na tela
     aoSalvar: (campos) => {
       const tarefa = criarTarefa(campos);
       estado.tarefas.push(tarefa);
       salvar(estado);
       console.log("Tarefa criada:", tarefa);
 
-      // Se a tarefa não for de hoje, avisamos por que ela não aparece na lista.
+      // Se a tarefa não for do dia que está na tela, avisamos por que ela não aparece.
       const mensagem =
-        tarefa.data === hojeISO()
+        tarefa.data === dataVisualizada
           ? "Tarefa adicionada!"
-          : `Tarefa salva para ${formatarData(tarefa.data)} — ela não aparece na lista de hoje.`;
+          : `Tarefa salva para ${formatarData(tarefa.data)} — navegue até esse dia para vê-la.`;
       desenharTarefasDoDia(estado, mensagem);
     }
   });
@@ -52,21 +58,16 @@ function criarCartaoDeNovaTarefa(estado) {
 }
 
 function criarCartaoDaLista(estado, mensagem) {
-  const dataDeHoje = hojeISO();
-  const tarefasDeHoje = tarefasDoDia(estado, dataDeHoje);
+  const ehHoje = dataVisualizada === hojeISO();
 
   const cartao = document.createElement("section");
   cartao.className = "cartao";
 
   const titulo = document.createElement("h2");
-  titulo.textContent = "Tarefas de hoje";
-
-  const subtitulo = document.createElement("p");
-  subtitulo.className = "subtitulo";
-  subtitulo.textContent = formatarDataLonga(dataDeHoje);
+  titulo.textContent = ehHoje ? "Tarefas de hoje" : "Tarefas do dia";
 
   cartao.appendChild(titulo);
-  cartao.appendChild(subtitulo);
+  cartao.appendChild(criarBarraDeNavegacao(estado));
 
   if (mensagem) {
     const sucesso = document.createElement("p");
@@ -75,26 +76,74 @@ function criarCartaoDaLista(estado, mensagem) {
     cartao.appendChild(sucesso);
   }
 
-  if (tarefasDeHoje.length === 0) {
+  // Pendentes primeiro (mais cedo primeiro); concluídas vão para o fim.
+  const tarefasOrdenadas = ordenarTarefasDoDia(tarefasDoDia(estado, dataVisualizada), dataVisualizada);
+
+  if (tarefasOrdenadas.length === 0) {
     const vazio = document.createElement("p");
     vazio.className = "estado-vazio";
-    vazio.textContent = "Nenhuma tarefa para hoje. Crie uma no formulário acima.";
+    vazio.textContent = ehHoje
+      ? "Nenhuma tarefa para hoje. Crie uma no formulário acima."
+      : "Nenhuma tarefa neste dia.";
     cartao.appendChild(vazio);
   } else {
     const lista = document.createElement("ul");
     lista.className = "lista-tarefas";
-    for (const tarefa of tarefasDeHoje) {
-      lista.appendChild(criarItemTarefa(estado, tarefa, dataDeHoje));
+    for (const tarefa of tarefasOrdenadas) {
+      lista.appendChild(criarItemTarefa(estado, tarefa, dataVisualizada));
     }
     cartao.appendChild(lista);
   }
 
   const aviso = document.createElement("p");
   aviso.className = "aviso-desenvolvimento";
-  aviso.textContent = "Versão em desenvolvimento: navegação entre dias e ordenação chegam no próximo passo.";
+  aviso.textContent = "Versão em desenvolvimento: exportação e importação dos dados chegam no próximo passo.";
   cartao.appendChild(aviso);
 
   return cartao;
+}
+
+// Barra de navegação: ‹ anterior · data por extenso · próximo › (+ botão Hoje).
+function criarBarraDeNavegacao(estado) {
+  const barra = document.createElement("div");
+  barra.className = "navegacao-dias";
+
+  const anterior = criarBotaoAcao("‹ anterior", null, () => {
+    irParaDia(estado, somarDias(dataVisualizada, -1));
+  });
+
+  const rotulo = document.createElement("span");
+  rotulo.className = "navegacao-rotulo";
+  rotulo.textContent = formatarDataLonga(dataVisualizada);
+
+  const proximo = criarBotaoAcao("próximo ›", null, () => {
+    irParaDia(estado, somarDias(dataVisualizada, 1));
+  });
+
+  barra.appendChild(anterior);
+  barra.appendChild(rotulo);
+  barra.appendChild(proximo);
+
+  // Atalho para voltar a hoje, que só aparece quando não estamos nele.
+  if (!ehHojeVisualizado()) {
+    barra.appendChild(
+      criarBotaoAcao("Hoje", "botao-acao-destaque", () => {
+        irParaDia(estado, hojeISO());
+      })
+    );
+  }
+
+  return barra;
+}
+
+function ehHojeVisualizado() {
+  return dataVisualizada === hojeISO();
+}
+
+// Troca o dia exibido e redesenha a lista.
+function irParaDia(estado, dataISO) {
+  dataVisualizada = dataISO;
+  desenharTarefasDoDia(estado);
 }
 
 function criarItemTarefa(estado, tarefa, dataISO) {
@@ -175,7 +224,13 @@ function abrirEdicaoDeTarefa(estado, tarefa) {
       atualizarTarefa(estado, tarefa.id, campos);
       salvar(estado);
       modal.close();
-      desenharTarefasDoDia(estado, "Tarefa atualizada!");
+
+      // Se a edição mudou a tarefa de dia, ela sai da lista atual: avisamos disso.
+      const mensagem =
+        tarefa.data === dataVisualizada
+          ? "Tarefa atualizada!"
+          : `Tarefa movida para ${formatarData(tarefa.data)} — navegue até esse dia para vê-la.`;
+      desenharTarefasDoDia(estado, mensagem);
     },
     aoCancelar: () => modal.close()
   });
@@ -219,7 +274,7 @@ function confirmarExclusaoDeTarefa(estado, tarefa) {
   const modal = abrirModal({ titulo: "Excluir tarefa", conteudo });
 }
 
-// Botão pequeno das ações de cada tarefa.
+// Botão pequeno das ações de cada tarefa (também usado na navegação entre dias).
 function criarBotaoAcao(texto, classeExtra, aoClicar) {
   const botao = document.createElement("button");
   botao.type = "button";
