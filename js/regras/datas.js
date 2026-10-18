@@ -66,3 +66,48 @@ export function formatarDuracao(minutos) {
   if (mins === 0) return `${horas} h`;
   return `${horas} h ${mins} min`;
 }
+
+// Converte um Date local em "AAAA-MM-DD" (mesmo estilo de hojeISO/somarDias).
+function paraISO(data) {
+  const ano = data.getFullYear();
+  const mes = String(data.getMonth() + 1).padStart(2, "0");
+  const dia = String(data.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+// Soma (ou subtrai) meses a uma data "AAAA-MM-DD".
+// Quando o mês de destino é mais curto, o dia é ajustado:
+// ex.: 31/01 + 1 mês = 28/02 (ou 29/02 em ano bissexto).
+export function somarMeses(dataISO, meses) {
+  const [ano, mes, dia] = dataISO.split("-").map(Number);
+  const destino = new Date(ano, mes - 1 + meses, 1);
+  const ultimoDiaDoMes = new Date(destino.getFullYear(), destino.getMonth() + 1, 0).getDate();
+  destino.setDate(Math.min(dia, ultimoDiaDoMes));
+  return paraISO(destino);
+}
+
+// Domingo da semana que contém a data (a semana do app começa no domingo,
+// igual à grade do calendário: Dom, Seg, Ter, ..., Sáb).
+export function inicioDaSemana(dataISO) {
+  const data = paraDateLocal(dataISO);
+  data.setDate(data.getDate() - data.getDay()); // getDay(): 0 = domingo
+  return paraISO(data);
+}
+
+// "2026-10-18" -> "18 a 24 de outubro de 2026".
+// Atravessa meses/anos com rótulo completo: "27 de dezembro de 2026 a 2 de janeiro de 2027".
+// Espera o domingo da semana como entrada (use junto com inicioDaSemana).
+export function rotuloSemana(dataInicioISO) {
+  const inicio = paraDateLocal(dataInicioISO);
+  const fim = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate() + 6);
+  const nomeMes = (d) => new Intl.DateTimeFormat("pt-BR", { month: "long" }).format(d);
+
+  const mesmoMes = inicio.getMonth() === fim.getMonth() && inicio.getFullYear() === fim.getFullYear();
+  if (mesmoMes) {
+    return `${inicio.getDate()} a ${fim.getDate()} de ${nomeMes(inicio)} de ${inicio.getFullYear()}`;
+  }
+  if (inicio.getFullYear() === fim.getFullYear()) {
+    return `${inicio.getDate()} de ${nomeMes(inicio)} a ${fim.getDate()} de ${nomeMes(fim)} de ${inicio.getFullYear()}`;
+  }
+  return `${inicio.getDate()} de ${nomeMes(inicio)} de ${inicio.getFullYear()} a ${fim.getDate()} de ${nomeMes(fim)} de ${fim.getFullYear()}`;
+}

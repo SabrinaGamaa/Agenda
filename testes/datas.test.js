@@ -1,7 +1,7 @@
 // Testes para js/regras/datas.js
 
 import { describe } from "./testes.js";
-import { hojeISO, somarDias, formatarData, formatarDataLonga, somarMinutos, formatarDuracao } from "../js/regras/datas.js";
+import { hojeISO, somarDias, somarMeses, inicioDaSemana, rotuloSemana, formatarData, formatarDataLonga, somarMinutos, formatarDuracao } from "../js/regras/datas.js";
 
 describe("datas", (suite) => {
   suite.test("hojeISO retorna string AAAA-MM-DD", (Assert) => {
@@ -54,5 +54,29 @@ describe("datas", (suite) => {
     Assert.equals(formatarDuracao(90), "1 h 30 min");
     Assert.equals(formatarDuracao(120), "2 h");
     Assert.equals(formatarDuracao(150), "2 h 30 min");
+  });
+
+  suite.test("somarMeses soma e subtrai meses, ajustando o dia", (Assert) => {
+    Assert.equals(somarMeses("2026-10-15", 1), "2026-11-15", "+1 mês");
+    Assert.equals(somarMeses("2026-10-01", -1), "2026-09-01", "-1 mês");
+    Assert.equals(somarMeses("2026-01-31", 1), "2026-02-28", "31/01 + 1 mês vira 28/02");
+    Assert.equals(somarMeses("2024-01-31", 1), "2024-02-29", "ano bissexto vira 29/02");
+    Assert.equals(somarMeses("2026-12-10", 1), "2027-01-10", "virada de ano");
+    Assert.equals(somarMeses("2026-12-31", 2), "2027-02-28", "31/12 + 2 meses vira 28/02/2027");
+  });
+
+  suite.test("inicioDaSemana devolve o domingo da semana", (Assert) => {
+    Assert.equals(inicioDaSemana("2026-10-18"), "2026-10-18", "domingo continua domingo");
+    Assert.equals(inicioDaSemana("2026-10-19"), "2026-10-18", "segunda volta pro domingo anterior");
+    Assert.equals(inicioDaSemana("2026-10-24"), "2026-10-18", "sábado volta pro domingo da mesma semana");
+    Assert.equals(inicioDaSemana("2026-11-01"), "2026-11-01", "domingo de outro mês");
+    Assert.equals(inicioDaSemana("2026-11-02"), "2026-11-01", "segunda com virada de mês");
+  });
+
+  suite.test("rotuloSemana monta o período legível", (Assert) => {
+    Assert.equals(rotuloSemana("2026-10-18"), "18 a 24 de outubro de 2026", "mesmo mês");
+    Assert.equals(rotuloSemana("2026-11-01"), "1 a 7 de novembro de 2026", "mesmo mês (novembro)");
+    Assert.equals(rotuloSemana("2026-11-29"), "29 de novembro a 5 de dezembro de 2026", "atravessa meses");
+    Assert.equals(rotuloSemana("2026-12-27"), "27 de dezembro de 2026 a 2 de janeiro de 2027", "atravessa anos");
   });
 });
