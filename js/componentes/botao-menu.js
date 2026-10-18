@@ -1,5 +1,5 @@
 // Componente: Botão de menu no cabeçalho (Exportar / Importar / Sobre).
-// Dropdown acessível, fica escondido por padrão (attribute hidden) e aparece ao clicar.
+// Dropdown escondido por padrão (attribute hidden + display fallback) e aparece ao clicar.
 
 export function criarBotaoMenu() {
   const container = document.createElement("div");
@@ -17,7 +17,8 @@ export function criarBotaoMenu() {
   const dropdown = document.createElement("div");
   dropdown.className = "menu-dropdown";
   dropdown.setAttribute("role", "menu");
-  dropdown.hidden = true; // Escondido por padrão
+  // Escondido por padrão via attribute hidden + fallback de display
+  dropdown.hidden = true;
   dropdown.style.cssText = `
     position: absolute;
     top: calc(100% + 4px);
@@ -28,7 +29,7 @@ export function criarBotaoMenu() {
     border-radius: var(--raio);
     box-shadow: var(--sombra);
     padding: var(--espaco-pequeno);
-    display: flex;
+    display: none; /* fallback explícito */
     flex-direction: column;
     gap: 4px;
     z-index: 100;
@@ -61,8 +62,7 @@ export function criarBotaoMenu() {
     `;
     btn.innerHTML = `<span>${op.icone}</span> <span>${op.label}</span>`;
     btn.addEventListener("click", () => {
-      dropdown.hidden = true;
-      botao.setAttribute("aria-expanded", "false");
+      fechar();
       container.dispatchEvent(new CustomEvent("menu-acao", { detail: { acao: op.acao }, bubbles: true }));
     });
     btn.addEventListener("mouseenter", () => btn.style.background = "var(--bg-hover)");
@@ -77,7 +77,13 @@ export function criarBotaoMenu() {
 
   function toggle() {
     aberto = !aberto;
-    dropdown.hidden = !aberto; // <-- esconde/mostra via attribute
+    if (aberto) {
+      dropdown.hidden = false;
+      dropdown.style.display = "block";
+    } else {
+      dropdown.hidden = true;
+      dropdown.style.display = "none";
+    }
     botao.setAttribute("aria-expanded", aberto);
     if (aberto) {
       // Fecha ao clicar fora
@@ -87,7 +93,6 @@ export function criarBotaoMenu() {
           document.removeEventListener("click", fecharFora);
         }
       };
-      // pequeno delay para o click registrar antes do listener de fora
       setTimeout(() => document.addEventListener("click", fecharFora), 0);
       // Fecha com Esc
       const fecharEsc = (e) => {
@@ -104,6 +109,7 @@ export function criarBotaoMenu() {
     if (aberto) {
       aberto = false;
       dropdown.hidden = true;
+      dropdown.style.display = "none";
       botao.setAttribute("aria-expanded", "false");
     }
   }

@@ -28,10 +28,13 @@ document.addEventListener("DOMContentLoaded", () => {
 /** Inicializa o botão de menu no cabeçalho */
 function inicializarMenu() {
   const cabecalho = document.querySelector(".cabecalho");
-  if (!cabecalho) return;
+  if (!cabecalho) {
+    // Header ainda não adicionado ao DOM; tenta novamente em seguida.
+    setTimeout(inicializarMenu, 100);
+    return;
+  }
 
   const menu = criarBotaoMenu();
-  // Insere antes do subtítulo ou no final
   const subtitulo = cabecalho.querySelector(".cabecalho-subtitulo");
   if (subtitulo) {
     cabecalho.insertBefore(menu, subtitulo.nextSibling);
@@ -40,12 +43,14 @@ function inicializarMenu() {
   }
 
   // Escuta ações do menu
-  menu.addEventListener("menu-acao", async (e) => {
+  menu.addEventListener("menu-acao", (e) => {
     const { acao } = e.detail;
     if (acao === "exportar") {
-      await exportarEstado(estado);
+      exportarEstado(estado).then(() => {
+        // Exportação assíncrona - aviso opcional
+      });
     } else if (acao === "importar") {
-      await handleImportar();
+      handleImportar();
     } else if (acao === "sobre") {
       mostrarSobre();
     }
@@ -67,6 +72,7 @@ async function handleImportar() {
   const resultado = await importarEstado(arquivo, estado);
   if (resultado.sucesso) {
     alert(resultado.mensagem);
+    notificarMudanca();
   } else {
     alert("Erro ao importar: " + resultado.mensagem);
   }
@@ -74,8 +80,6 @@ async function handleImportar() {
 
 /** Mostra modal "Sobre" */
 function mostrarSobre() {
-  // Reutiliza o modal nativo via app.js não ter acesso direto...
-  // Vamos criar um modal simples inline
   const modal = document.createElement("dialog");
   modal.className = "modal";
   modal.innerHTML = `
@@ -107,8 +111,9 @@ function mostrarSobre() {
 /** Mostra a tela inicial (calendário + painel lateral) */
 export function mostrarInicio() {
   telaAtual = "inicio";
+  // Garante que o header reflita o estado inicial
+  fixarBotaoHome();
   desenharInicio(estado, (dataISO) => {
-    // Callback quando clica num dia no calendário
     mostrarTarefas(dataISO);
   });
   atualizarCabecalho();
@@ -119,18 +124,22 @@ export function mostrarTarefas(dataISO) {
   telaAtual = "tarefas";
   setDataVisualizada(dataISO);
   desenharTarefasDoDia(estado);
+  fixarBotaoHome();
   atualizarCabecalho();
 }
 
-/** Atualiza o cabeçalho (botão Home/Volta + menu já existe) */
-function atualizarCabecalho() {
+/** Garante que o botão "Home" apareça na tela de tarefas */
+function fixarBotaoHome() {
   const cabecalho = document.querySelector(".cabecalho");
   if (!cabecalho) return;
 
-  // Remove botão Home antigo se houver
+  // Remove qualquer botão Home anterior
   const antigo = cabecalho.querySelector(".botao-home");
-  if (antigo) antigo.remove();
+  if (antigo) {
+    antigo.remove();
+  }
 
+  // Adiciona o botão Home apenas quando estamos na tarefa
   if (telaAtual === "tarefas") {
     const botaoHome = document.createElement("button");
     botaoHome.type = "button";
@@ -140,7 +149,23 @@ function atualizarCabecalho() {
     botaoHome.style.marginLeft = "auto";
     botaoHome.addEventListener("click", mostrarInicio);
     cabecalho.appendChild(botaoHome);
+  } else {
+    // Na home, não mostra o botão Home
+    const homeBtn = cabecalho.querySelector(".botao-home");
+    if (homeBtn) homeBtn.remove();
   }
+}
+
+/** Atualiza o cabeçalho (título + botão Home/Volta + menu) */
+function atualizarCabecalho() {
+  const cabecalho = document.querySelector(".cabecalho");
+  if (!cabecalho) return;
+
+  // Recria o botão Home caso tenha sido removido ou perdido
+  fixarBotaoHome();
+
+  // O menu (Exportar/Importar) já fica gerenciado por inicializarMenu()
+  // Não fazemos nada adicional aqui para não duplicar esforço.
 }
 
 /** Função auxiliar para outras telas chamarem quando salvam algo */
