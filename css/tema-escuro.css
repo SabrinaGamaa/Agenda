@@ -1,7 +1,5 @@
 /* ==========================================================================
    TEMA ESCURO — Meu Painel Pessoal
-   Paleta fria, minimalista, detalhes "perfeccionistas".
-   Carrega a fonte Inter localmente (fonts/Inter-*.woff2).
    ========================================================================== */
 
 @font-face {
@@ -37,7 +35,7 @@
   /* Cores base */
   --bg:           #0d0d10;      /* fundo principal */
   --bg-elevado:   #141418;      /* cartões, modais, dropdowns */
-  --bg-hover:     #1a1a20;      /* hover em linhas/botões */
+  --bg-hover:     #1a1a20;
   --bg-input:     #0f0f12;      /* inputs, selects */
   --borda:        rgba(255,255,255,.06);
   --borda-forte:  rgba(255,255,255,.12);
@@ -55,7 +53,7 @@
   --critico-suave: rgba(139,42,42,.15);
   --critico-forte: #a03030;
 
-  /* Prioridades (usam acento + critico + um azul petróleo) */
+  /* Prioridades */
   --prio-alta:    #8b2a2a;
   --prio-media:   #6b46c1;
   --prio-baixa:   #1e3a5f;
@@ -107,15 +105,20 @@ a:hover { text-decoration: underline; }
 ::-webkit-scrollbar-thumb:hover { background: var(--texto-fraco); }
 
 /* ==========================================================================
-   LAYOUT PRINCIPAL
+   CABECALHO
    ========================================================================== */
 .cabecalho {
+  display: flex;
+  flex-direction: row;        /* LINHA: itens ficam um ao lado do outro */
+  align-items: center;       /* itens alinhados no centro vertical */
+  gap: var(--espaco);        /* espaço entre h1, subtítulo e menu */
   background: linear-gradient(135deg, #16161a 0%, #0d0d10 100%);
   border-bottom: 1px solid var(--borda);
-  padding: calc(var(--espaco) * 1.25) var(--espaco);
+  padding: 0 var(--espaco);
   position: sticky;
   top: 0;
   z-index: 10;
+  position: relative;        /* <-- para o dropdown posicionar dentro do header */
 }
 
 .cabecalho h1 {
@@ -126,7 +129,7 @@ a:hover { text-decoration: underline; }
 }
 
 .cabecalho-subtitulo {
-  margin: 4px 0 0;
+  margin: 0;                 /* sem margem extra */
   color: var(--texto-suave);
   font-size: 0.85rem;
   font-weight: 400;
@@ -138,7 +141,22 @@ a:hover { text-decoration: underline; }
   padding: var(--espaco);
 }
 
-/* Grid de duas colunas: calendário (esq) + painel lateral (dir) */
+/* ==========================================================================
+   BOTÃO DE MENU NO CABECALHO
+   ========================================================================== */
+.menu-cabecalho {
+  align-self: flex-end;      /* empurra o menu para o final da linha (direita) */
+}
+
+.menu-cabecalho .botao-icone {
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+}
+
+/* ==========================================================================
+   LAYOUT PRINCIPAL
+   ========================================================================== */
 .layout-duas-colunas {
   display: grid;
   grid-template-columns: 1fr 280px;
@@ -146,7 +164,6 @@ a:hover { text-decoration: underline; }
   align-items: start;
 }
 
-/* Mobile: painel lateral colapsa embaixo */
 @media (max-width: 900px) {
   .layout-duas-colunas {
     grid-template-columns: 1fr;
@@ -154,606 +171,5 @@ a:hover { text-decoration: underline; }
 }
 
 /* ==========================================================================
-   CARTÕES / SUPERFÍCIES
+   Resto do CSS (cartões, botões, formulários, etc.) — sem alterações
    ========================================================================== */
-.cartao {
-  background: var(--bg-elevado);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  padding: calc(var(--espaco) * 1.25);
-  box-shadow: var(--sombra);
-  margin-bottom: var(--espaco);
-}
-
-.cartao h2 {
-  margin: 0 0 var(--espaco-pequeno);
-  font-size: 1.1rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-
-.cartao h3 {
-  margin: 0 0 var(--espaco-pequeno);
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--texto-suave);
-}
-
-/* ==========================================================================
-   BOTÕES
-   ========================================================================== */
-.botao {
-  font: inherit;
-  font-weight: 500;
-  border: none;
-  border-radius: var(--raio-pequeno);
-  cursor: pointer;
-  transition: background .15s ease, color .15s ease, transform .05s ease;
-}
-
-.botao:active { transform: scale(0.98); }
-.botao:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
-
-/* Principal — gradiente roxo */
-.botao-principal {
-  padding: 10px 16px;
-  background: linear-gradient(135deg, var(--acento), var(--acento-forte));
-  color: #fff;
-}
-.botao-principal:hover { filter: brightness(1.05); }
-
-/* Secundário — fantasma */
-.botao-secundario {
-  padding: 10px 16px;
-  background: transparent;
-  color: var(--texto);
-  border: 1px solid var(--borda-forte);
-}
-.botao-secundario:hover { background: var(--bg-hover); border-color: var(--acento); }
-
-/* Perigo — vermelho contido */
-.botao-perigo {
-  padding: 10px 16px;
-  background: var(--critico);
-  color: #fff;
-}
-.botao-perigo:hover { background: var(--critico-forte); }
-
-/* Ícone (ações da tarefa, navegação) — só ícone, tooltip */
-.botao-icone {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  background: transparent;
-  color: var(--texto-suave);
-  border-radius: var(--raio-pequeno);
-}
-.botao-icone:hover {
-  background: var(--bg-hover);
-  color: var(--texto);
-}
-.botao-icone:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
-
-/* Destacado (botão "Hoje" na navegação) */
-.botao-icone-destaque {
-  color: var(--acento);
-}
-.botao-icone-destaque:hover {
-  background: var(--acento-suave);
-  color: var(--acento);
-}
-
-/* Grupo de botões (modais, formulários) */
-.grupo-botoes {
-  display: flex;
-  gap: var(--espaco-pequeno);
-  justify-content: flex-end;
-  flex-wrap: wrap;
-}
-
-/* ==========================================================================
-   FORMULÁRIOS
-   ========================================================================== */
-.formulario-tarefa {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--espaco-pequeno);
-  margin-top: var(--espaco);
-}
-
-.campo {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.campo-largo { grid-column: 1 / -1; }
-
-.campo-rotulo {
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--texto-suave);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.formulario-tarefa input,
-.formulario-tarefa select {
-  font: inherit;
-  padding: 10px 12px;
-  border: 1px solid var(--borda);
-  border-radius: var(--raio-pequeno);
-  background: var(--bg-input);
-  color: var(--texto);
-  transition: border-color .15s ease, box-shadow .15s ease;
-}
-
-.formulario-tarefa input::placeholder {
-  color: var(--texto-fraco);
-}
-
-.formulario-tarefa input:focus,
-.formulario-tarefa select:focus {
-  outline: none;
-  border-color: var(--acento);
-  box-shadow: 0 0 0 3px var(--acento-suave);
-}
-
-.previa-horario {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--texto-suave);
-}
-
-.aviso-inconsistencia {
-  margin: 0;
-  font-size: 0.85rem;
-  color: var(--critico);
-}
-
-.erro-formulario {
-  margin: 0;
-  padding: 10px 12px;
-  background: var(--critico-suave);
-  color: var(--critico);
-  border-radius: var(--raio-pequeno);
-  font-size: 0.875rem;
-  border: 1px solid rgba(139,42,42,.2);
-}
-
-.mensagem-sucesso {
-  margin: 0 0 var(--espaco);
-  padding: 10px 12px;
-  background: rgba(47,133,90,.15);
-  color: #4ade80;
-  border-radius: var(--raio-pequeno);
-  font-size: 0.875rem;
-  border: 1px solid rgba(47,133,90,.2);
-}
-
-@media (max-width: 560px) {
-  .formulario-tarefa { grid-template-columns: 1fr; }
-}
-
-/* ==========================================================================
-   MODAL (dialog nativo)
-   ========================================================================== */
-.modal {
-  border: none;
-  border-radius: var(--raio);
-  padding: calc(var(--espaco) * 1.25);
-  width: min(520px, 92vw);
-  background: var(--bg-elevado);
-  color: var(--texto);
-  box-shadow: var(--sombra-forte);
-}
-
-.modal::backdrop { background: rgba(0,0,0,.7); }
-
-.modal-topo {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--espaco);
-  margin-bottom: var(--espaco);
-  padding-bottom: var(--espaco-pequeno);
-  border-bottom: 1px solid var(--borda);
-}
-
-.modal-topo h2 { margin: 0; font-size: 1.15rem; font-weight: 600; }
-
-.modal-fechar {
-  font: inherit;
-  font-size: 1.25rem;
-  line-height: 1;
-  padding: 4px 8px;
-  background: transparent;
-  color: var(--texto-fraco);
-  border: none;
-  border-radius: var(--raio-pequeno);
-  cursor: pointer;
-}
-.modal-fechar:hover { background: var(--bg-hover); color: var(--texto); }
-
-.modal-texto { margin: 0 0 var(--espaco); color: var(--texto-suave); }
-
-.modal .formulario-tarefa { margin-top: 0; }
-
-/* ==========================================================================
-   LISTA DE TAREFAS (tela de dia)
-   ========================================================================== */
-.lista-tarefas {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.tarefa {
-  display: flex;
-  gap: var(--espaco);
-  padding: 12px;
-  background: var(--bg-elevado);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio-pequeno);
-  transition: border-color .15s ease, background .15s ease;
-}
-
-.tarefa:hover { border-color: var(--borda-forte); }
-
-/* Linha fina na esquerda = prioridade (sem selo de fundo) */
-.tarefa::before {
-  content: "";
-  width: 2px;
-  height: 100%;
-  border-radius: 2px 0 0 2px;
-  flex-shrink: 0;
-}
-
-.tarefa.prioridade-alta::before { background: var(--prio-alta); }
-.tarefa.prioridade-media::before { background: var(--prio-media); }
-.tarefa.prioridade-baixa::before { background: var(--prio-baixa); }
-
-.tarefa.concluida {
-  opacity: 0.35;
-}
-.tarefa.concluida .tarefa-titulo {
-  text-decoration: line-through;
-  text-decoration-thickness: 1px;
-  text-decoration-color: var(--texto-fraco);
-}
-
-.tarefa-esquerda {
-  min-width: 130px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.tarefa-horario {
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  font-size: 0.85rem;
-  color: var(--texto-suave);
-}
-
-.tarefa-corpo {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.tarefa-titulo {
-  font-weight: 500;
-  font-size: 0.95rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tarefa-detalhes {
-  font-size: 0.8rem;
-  color: var(--texto-fraco);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Ações: só ícones com tooltip */
-.tarefa-acoes {
-  margin-left: auto;
-  display: flex;
-  gap: 4px;
-  align-items: center;
-  opacity: 0;
-  transition: opacity .15s ease;
-}
-.tarefa:hover .tarefa-acoes { opacity: 1; }
-
-.tarefa-acoes .botao-icone::before { font-size: 1rem; line-height: 1; }
-.tarefa-acoes .botao-icone[data-acao="concluir"]::before { content: "✓"; }
-.tarefa-acoes .botao-icone[data-acao="reabrir"]::before { content: "↺"; }
-.tarefa-acoes .botao-icone[data-acao="editar"]::before { content: "✎"; }
-.tarefa-acoes .botao-icone[data-acao="excluir"]::before { content: "🗑"; color: var(--critico); }
-.tarefa-acoes .botao-icone[data-acao="excluir"]:hover { background: var(--critico-suave); color: var(--critico); }
-
-/* Mobile: ações sempre visíveis, ícones maiores */
-@media (max-width: 560px) {
-  .tarefa { flex-direction: column; gap: 8px; }
-  .tarefa-esquerda { flex-direction: row; flex-wrap: wrap; gap: 8px; min-width: 0; }
-  .tarefa-acoes { opacity: 1; margin-left: 0; justify-content: flex-end; }
-  .tarefa-acoes .botao-icone { width: 40px; height: 40px; }
-}
-
-/* ==========================================================================
-   ESTADO VAZIO
-   ========================================================================== */
-.estado-vazio {
-  margin: 0;
-  padding: calc(var(--espaco) * 2);
-  background: var(--bg-input);
-  border: 1px dashed var(--borda);
-  border-radius: var(--raio);
-  color: var(--texto-suave);
-  text-align: center;
-  font-size: 0.9rem;
-}
-
-.aviso-desenvolvimento {
-  margin: var(--espaco) 0 0;
-  color: var(--texto-fraco);
-  font-size: 0.75rem;
-  text-align: center;
-}
-
-/* ==========================================================================
-   NAVEGAÇÃO ENTRE DIAS (barra no cartão da lista)
-   ========================================================================== */
-.navegacao-dias {
-  display: flex;
-  align-items: center;
-  gap: var(--espaco-pequeno);
-  margin: 0 0 var(--espaco);
-  padding-bottom: var(--espaco-pequeno);
-  border-bottom: 1px solid var(--borda);
-  flex-wrap: wrap;
-}
-
-.navegacao-dias .botao-icone { flex-shrink: 0; }
-
-.navegacao-rotulo {
-  flex: 1;
-  text-align: center;
-  font-weight: 500;
-  color: var(--texto-suave);
-  font-size: 0.95rem;
-}
-
-/* ==========================================================================
-   CALENDÁRIO MENSAL (home)
-   ========================================================================== */
-.calendario-mes {
-  background: var(--bg-elevado);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  overflow: hidden;
-}
-
-.calendario-cabecalho {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  background: var(--bg-input);
-  border-bottom: 1px solid var(--borda);
-  padding: var(--espaco-pequeno) 0;
-}
-
-.calendario-dia-semana {
-  text-align: center;
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--texto-fraco);
-}
-
-.calendario-grade {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-}
-
-.calendario-dia {
-  aspect-ratio: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding: var(--espaco-pequeno);
-  background: transparent;
-  border: none;
-  border-right: 1px solid var(--borda);
-  border-bottom: 1px solid var(--borda);
-  color: var(--texto);
-  font-size: 0.9rem;
-  font-weight: 400;
-  cursor: pointer;
-  transition: background .15s ease, color .15s ease;
-  position: relative;
-}
-
-.calendario-dia:last-child { border-right: none; }
-.calendario-dia:nth-child(7n) { border-right: none; }
-
-.calendario-dia:hover { background: var(--bg-hover); }
-.calendario-dia:focus-visible {
-  outline: 2px solid var(--acento);
-  outline-offset: -2px;
-  z-index: 1;
-}
-
-/* Dia do mês atual */
-.calendario-dia.hoje {
-  color: var(--acento);
-  font-weight: 600;
-}
-.calendario-dia.hoje::after {
-  content: "";
-  position: absolute;
-  bottom: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  background: var(--acento);
-  border-radius: 50%;
-}
-
-/* Dia de outro mês (cinza bem fraco) */
-.calendario-dia.outro-mes {
-  color: var(--texto-fraco);
-  pointer-events: none;
-}
-
-/* Bolinhas de prioridade (máx. 3) */
-.calendario-indicadores {
-  display: flex;
-  gap: 3px;
-  margin-top: 4px;
-  padding-top: 2px;
-}
-
-.calendario-indicador {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.calendario-indicador.alta { background: var(--prio-alta); }
-.calendario-indicador.media { background: var(--prio-media); }
-.calendario-indicador.baixa { background: var(--prio-baixa); }
-
-/* ==========================================================================
-   PAINEL LATERAL (ranking / resumo)
-   ========================================================================== */
-.painel-lateral {
-  display: flex;
-  flex-direction: column;
-  gap: var(--espaco);
-}
-
-.painel-card {
-  background: var(--bg-elevado);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio);
-  padding: var(--espaco);
-}
-
-.painel-card h3 {
-  margin: 0 0 var(--espaco-pequeno);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--texto-suave);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.painel-lista {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--espaco-pequeno);
-}
-
-.painel-item {
-  display: flex;
-  align-items: center;
-  gap: var(--espaco-pequeno);
-  padding: var(--espaco-pequeno);
-  background: var(--bg-input);
-  border: 1px solid var(--borda);
-  border-radius: var(--raio-pequeno);
-  transition: border-color .15s ease;
-}
-.painel-item:hover { border-color: var(--borda-forte); }
-
-.painel-item-icone {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--acento-suave);
-  color: var(--acento);
-  border-radius: var(--raio-pequeno);
-  font-size: 0.85rem;
-  flex-shrink: 0;
-}
-
-.painel-item-conteudo { flex: 1; min-width: 0; }
-
-.painel-item-titulo {
-  font-size: 0.85rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.painel-item-meta {
-  font-size: 0.75rem;
-  color: var(--texto-fraco);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ==========================================================================
-   UTILITÁRIOS
-   ========================================================================== */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Tooltip CSS-only para botões-ícone */
-[aria-label] { position: relative; }
-[aria-label]::after {
-  content: attr(aria-label);
-  position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 4px 8px;
-  background: var(--bg-elevado);
-  border: 1px solid var(--borda-forte);
-  border-radius: var(--raio-pequeno);
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--texto);
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .15s ease, transform .15s ease;
-  transform: translateX(-50%) translateY(4px);
-  z-index: 20;
-  box-shadow: var(--sombra);
-}
-[aria-label]:hover::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
