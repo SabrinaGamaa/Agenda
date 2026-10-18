@@ -1,10 +1,9 @@
 // Componente: Botão de menu no cabeçalho (Exportar / Importar / Sobre).
-// Dropdown acessível, fecha ao clicar fora ou Esc.
+// Dropdown acessível, fica escondido por padrão (attribute hidden) e aparece ao clicar.
 
 export function criarBotaoMenu() {
   const container = document.createElement("div");
   container.className = "menu-cabecalho";
-  container.style.position = "relative";
 
   const botao = document.createElement("button");
   botao.type = "button";
@@ -18,7 +17,7 @@ export function criarBotaoMenu() {
   const dropdown = document.createElement("div");
   dropdown.className = "menu-dropdown";
   dropdown.setAttribute("role", "menu");
-  dropdown.hidden = true;
+  dropdown.hidden = true; // Escondido por padrão
   dropdown.style.cssText = `
     position: absolute;
     top: calc(100% + 4px);
@@ -33,6 +32,7 @@ export function criarBotaoMenu() {
     flex-direction: column;
     gap: 4px;
     z-index: 100;
+    width: 180px;
   `;
 
   const opcoes = [
@@ -77,7 +77,7 @@ export function criarBotaoMenu() {
 
   function toggle() {
     aberto = !aberto;
-    dropdown.hidden = !aberto;
+    dropdown.hidden = !aberto; // <-- esconde/mostra via attribute
     botao.setAttribute("aria-expanded", aberto);
     if (aberto) {
       // Fecha ao clicar fora
@@ -87,6 +87,7 @@ export function criarBotaoMenu() {
           document.removeEventListener("click", fecharFora);
         }
       };
+      // pequeno delay para o click registrar antes do listener de fora
       setTimeout(() => document.addEventListener("click", fecharFora), 0);
       // Fecha com Esc
       const fecharEsc = (e) => {
