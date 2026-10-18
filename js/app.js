@@ -35,12 +35,8 @@ function inicializarMenu() {
   }
 
   const menu = criarBotaoMenu();
-  const subtitulo = cabecalho.querySelector(".cabecalho-subtitulo");
-  if (subtitulo) {
-    cabecalho.insertBefore(menu, subtitulo.nextSibling);
-  } else {
-    cabecalho.appendChild(menu);
-  }
+  // O menu entra no fim do cabeçalho; o CSS o alinha à direita.
+  cabecalho.appendChild(menu);
 
   // Escuta ações do menu
   menu.addEventListener("menu-acao", (e) => {
@@ -146,9 +142,14 @@ function fixarBotaoHome() {
     botaoHome.className = "botao-icone botao-home";
     botaoHome.setAttribute("aria-label", "Voltar ao calendário");
     botaoHome.textContent = "⌂";
-    botaoHome.style.marginLeft = "auto";
     botaoHome.addEventListener("click", mostrarInicio);
-    cabecalho.appendChild(botaoHome);
+    // Insere antes do menu, para ficar: [ ⌂ ] [ ⋮ ] à direita
+    const menu = cabecalho.querySelector(".menu-cabecalho");
+    if (menu) {
+      cabecalho.insertBefore(botaoHome, menu);
+    } else {
+      cabecalho.appendChild(botaoHome);
+    }
   } else {
     // Na home, não mostra o botão Home
     const homeBtn = cabecalho.querySelector(".botao-home");
