@@ -1,0 +1,52 @@
+/* Variáveis de cores e medidas (tema claro inicial) */
+:root {
+  --cor-fundo: #f5f6f8;
+  --cor-superficie: #ffffff;
+  --cor-texto: #1f2933;
+  --cor-texto-suave: #52606d;
+  --cor-primaria: #2b6cb0;
+  --raio: 8px;
+  --espaco: 16px;
+}
+
+/* Reset básico: tudo cabe dentro da largura, sem margens indesejadas */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  line-height: 1.5;
+}
+
+.cabecalho {
+  background: var(--cor-primaria);
+  color: #ffffff;
+  padding: var(--espaco);
+}
+
+.cabecalho h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+#conteudo {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--espaco);
+}
+
+.mensagem-inicial {
+  background: var(--cor-superficie);
+  border-radius: var(--raio);
+  padding: var(--espaco);
+  color: var(--cor-texto-suave);
+}
+
+.status-js {
+  color: var(--cor-texto-suave);
+  font-size: 0.9rem;
+}

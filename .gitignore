@@ -1,0 +1,14 @@
+# Arquivos do sistema operacional
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Pasta de configurações do VS Code (cada pessoa tem a sua)
+.vscode/
+
+# Dependências de ferramentas futuras (ex.: testes automatizados)
+node_modules/
+
+# Backups exportados pelo próprio aplicativo — nunca versionar dados reais
+dados/export-*.json
+dados/backup-*.json
