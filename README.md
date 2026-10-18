@@ -6,7 +6,7 @@ O plano completo do projeto (fases, modelo de dados, regras e critérios de conc
 
 ## Situação atual
 
-**Fase 1 em andamento — tarefas do dia: criar, editar, concluir/reabrir, excluir e navegar entre dias.** Os dados ficam no navegador (`localStorage`); a lista ordena os pendentes por horário e joga as concluídas para o fim. O próximo passo traz exportação/importação dos dados e os primeiros testes automatizados.
+**Fase 1 em andamento — redesign completo (tema escuro + calendário home).** Tela inicial com calendário mensal (bolinhas por prioridade) + painel lateral (próximos prazos, top categorias, resumo da semana). Lista de tarefas com botões-ícone, linha fina de prioridade, concluídas com opacity. Navegação Home ↔ Dia funcionando. O próximo passo traz exportação/importação dos dados e os primeiros testes automatizados.
 
 ## Como abrir o projeto
 
@@ -44,10 +44,15 @@ Depois abra o endereço mostrado pelo comando (geralmente `http://localhost:3000
 
 ## Como testar (passo atual)
 
-1. Abra pela URL do servidor local (opções acima).
-2. No cartão da lista, use **‹ anterior** e **próximo ›** para navegar entre os dias; a data muda por extenso. Fora de hoje, aparece o botão **Hoje** para voltar (roxo).
-3. Crie uma tarefa para outro dia: o formulário já sugere a data do dia que está na tela, e a mensagem avisa que a tarefa não está na lista atual.
-4. Conclua uma tarefa: ela vai para o **fim** da lista, riscada (os pendentes ficam em ordem de horário, do mais cedo ao mais tarde).
-5. Edite uma tarefa mudando a data: a mensagem avisa que ela foi para outro dia.
-6. Recarregue a página: a visão volta para hoje e os dados continuam salvos.
-7. Console (`F12`): sem erros.
+1. Abra pela URL do servidor local (opções acima) — abre no **Home** (calendário + painel lateral).
+2. **Calendário**: veja o mês atual; dia de hoje tem contorno roxo + bolinha; dias 19/20/21 têm bolinhas coloridas (vermelho=alta, roxo=média, azul=baixa).
+3. **Painel lateral** (direita): "Próximos prazos" (3 primeiros), "Top categorias", "Semana" (concluídas/pendentes).
+4. **Clique num dia** no calendário → abre a **tela de tarefas** daquele dia.
+5. Na tela de tarefas: botão **⌂ (Home)** no cabeçalho para voltar ao calendário.
+6. **Navegação entre dias**: botões ‹ › + data por extenso + botão **⌂ Hoje** (roxo) quando não é hoje.
+7. **Criar tarefa**: formulário sugere a data do dia atual; prioridade = linha fina à esquerda (vermelho/roxo/azul).
+8. **Concluir** (ícone ✓): tarefa vai para o fim, `opacity: .35` + risco fino; **Reabrir** (↺) volta pro lugar.
+9. **Editar** (✎): abre modal; **Excluir** (🗑): pede confirmação.
+10. **Volta ao Home** (botão ⌂): bolinhas do calendário e painel lateral atualizados.
+11. **Recarregue**: volta pro Home (hoje); dados intactos.
+12. Console (`F12`): sem erros.

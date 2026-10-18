@@ -1,5 +1,6 @@
 // Tela de tarefas: formulário de criação + lista de um dia, com ações
 // (concluir/reabrir, editar, excluir) e navegação entre dias.
+// Tema escuro: botões só ícones, linha fina de prioridade, concluídas com opacity.
 
 import { hojeISO, somarDias, formatarData, formatarDataLonga, somarMinutos, formatarDuracao } from "../regras/datas.js";
 import {
@@ -14,10 +15,16 @@ import {
 import { criarFormularioTarefa } from "../componentes/formulario-tarefa.js";
 import { abrirModal } from "../componentes/modal.js";
 import { salvar } from "../dados/armazenamento.js";
+import { atualizarHome, marcarDiaVisualizadoNoCalendario } from "./inicio.js";
 
 // Dia que está sendo exibido na lista. Começa em hoje e só muda pelos
 // botões de navegação. Não é salvo: ao recarregar a página, voltamos para hoje.
 let dataVisualizada = hojeISO();
+
+/** Define o dia a ser exibido (usado pelo app.js ao vir do calendário) */
+export function setDataVisualizada(dataISO) {
+  dataVisualizada = dataISO;
+}
 
 export function desenharTarefasDoDia(estado, mensagem = null) {
   const conteudo = document.getElementById("conteudo");
@@ -25,6 +32,10 @@ export function desenharTarefasDoDia(estado, mensagem = null) {
 
   conteudo.appendChild(criarCartaoDeNovaTarefa(estado));
   conteudo.appendChild(criarCartaoDaLista(estado, mensagem));
+
+  // Atualiza o calendário na home (bolinhas + dia visualizado)
+  atualizarHome(estado);
+  marcarDiaVisualizadoNoCalendario(dataVisualizada);
 }
 
 function criarCartaoDeNovaTarefa(estado) {
@@ -108,7 +119,7 @@ function criarBarraDeNavegacao(estado) {
   const barra = document.createElement("div");
   barra.className = "navegacao-dias";
 
-  const anterior = criarBotaoAcao("‹ anterior", null, () => {
+  const anterior = criarBotaoNavegacao("‹", "Dia anterior", () => {
     irParaDia(estado, somarDias(dataVisualizada, -1));
   });
 
@@ -116,7 +127,7 @@ function criarBarraDeNavegacao(estado) {
   rotulo.className = "navegacao-rotulo";
   rotulo.textContent = formatarDataLonga(dataVisualizada);
 
-  const proximo = criarBotaoAcao("próximo ›", null, () => {
+  const proximo = criarBotaoNavegacao("›", "Próximo dia", () => {
     irParaDia(estado, somarDias(dataVisualizada, 1));
   });
 
@@ -127,9 +138,9 @@ function criarBarraDeNavegacao(estado) {
   // Atalho para voltar a hoje, que só aparece quando não estamos nele.
   if (!ehHojeVisualizado()) {
     barra.appendChild(
-      criarBotaoAcao("Hoje", "botao-acao-destaque", () => {
+      criarBotaoNavegacao("⌂", "Ir para hoje", () => {
         irParaDia(estado, hojeISO());
-      })
+      }, true)
     );
   }
 
@@ -146,6 +157,16 @@ function irParaDia(estado, dataISO) {
   desenharTarefasDoDia(estado);
 }
 
+function criarBotaoNavegacao(texto, ariaLabel, aoClicar, destaque = false) {
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = `botao-icone${destaque ? " botao-icone-destaque" : ""}`;
+  botao.setAttribute("aria-label", ariaLabel);
+  botao.textContent = texto;
+  botao.addEventListener("click", aoClicar);
+  return botao;
+}
+
 function criarItemTarefa(estado, tarefa, dataISO) {
   const concluida = estaConcluida(tarefa, dataISO);
   const { horaFinal, diaSeguinte } = somarMinutos(tarefa.horaInicio, tarefa.duracaoMinutos);
@@ -160,12 +181,7 @@ function criarItemTarefa(estado, tarefa, dataISO) {
   horario.className = "tarefa-horario";
   horario.textContent = `${tarefa.horaInicio}–${horaFinal}${diaSeguinte ? " (dia seguinte)" : ""}`;
 
-  const selo = document.createElement("span");
-  selo.className = "selo selo-prioridade";
-  selo.textContent = `prioridade ${tarefa.prioridade}`;
-
   esquerda.appendChild(horario);
-  esquerda.appendChild(selo);
 
   const corpo = document.createElement("div");
   corpo.className = "tarefa-corpo";
@@ -184,28 +200,40 @@ function criarItemTarefa(estado, tarefa, dataISO) {
   detalhes.textContent = partes.join(" · ");
   corpo.appendChild(detalhes);
 
-  // Ações da tarefa
+  // Ações da tarefa: só ícones com tooltip (aria-label)
   const acoes = document.createElement("div");
   acoes.className = "tarefa-acoes";
 
   acoes.appendChild(
-    criarBotaoAcao(concluida ? "Reabrir" : "Concluir", null, () => {
-      alternarConclusao(estado, tarefa.id, dataISO);
-      salvar(estado);
-      desenharTarefasDoDia(estado, concluida ? "Tarefa reaberta!" : "Tarefa concluída!");
-    })
+    criarBotaoAcao(
+      concluida ? "reabrir" : "concluir",
+      concluida ? "Reabrir" : "Concluir",
+      () => {
+        alternarConclusao(estado, tarefa.id, dataISO);
+        salvar(estado);
+        desenharTarefasDoDia(estado, concluida ? "Tarefa reaberta!" : "Tarefa concluída!");
+      }
+    )
   );
 
   acoes.appendChild(
-    criarBotaoAcao("Editar", null, () => {
-      abrirEdicaoDeTarefa(estado, tarefa);
-    })
+    criarBotaoAcao(
+      "editar",
+      "Editar",
+      () => {
+        abrirEdicaoDeTarefa(estado, tarefa);
+      }
+    )
   );
 
   acoes.appendChild(
-    criarBotaoAcao("Excluir", "botao-acao-perigo", () => {
-      confirmarExclusaoDeTarefa(estado, tarefa);
-    })
+    criarBotaoAcao(
+      "excluir",
+      "Excluir",
+      () => {
+        confirmarExclusaoDeTarefa(estado, tarefa);
+      }
+    )
   );
 
   item.appendChild(esquerda);
@@ -257,7 +285,7 @@ function confirmarExclusaoDeTarefa(estado, tarefa) {
 
   const excluir = document.createElement("button");
   excluir.type = "button";
-  excluir.className = "botao-principal-perigo";
+  excluir.className = "botao-perigo";
   excluir.textContent = "Excluir";
   excluir.addEventListener("click", () => {
     excluirTarefa(estado, tarefa.id);
@@ -274,12 +302,13 @@ function confirmarExclusaoDeTarefa(estado, tarefa) {
   const modal = abrirModal({ titulo: "Excluir tarefa", conteudo });
 }
 
-// Botão pequeno das ações de cada tarefa (também usado na navegação entre dias).
-function criarBotaoAcao(texto, classeExtra, aoClicar) {
+// Botão de ação da tarefa (ícone + tooltip via aria-label)
+function criarBotaoAcao(acao, ariaLabel, aoClicar) {
   const botao = document.createElement("button");
   botao.type = "button";
-  botao.className = classeExtra ? `botao-acao ${classeExtra}` : "botao-acao";
-  botao.textContent = texto;
+  botao.className = "botao-icone";
+  botao.setAttribute("data-acao", acao);
+  botao.setAttribute("aria-label", ariaLabel);
   botao.addEventListener("click", aoClicar);
   return botao;
 }
