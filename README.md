@@ -6,7 +6,7 @@ O plano completo do projeto (fases, modelo de dados, regras e critérios de conc
 
 ## Situação atual
 
-**Fase 1 completa — redesign + export/import + testes automatizados.** Tela inicial com calendário mensal + painel lateral. Lista de tarefas com botões-ícone, navegação Home ↔ Dia. Exporta/importa JSON completo. Testes automatizados em `testes/testes.html`.
+**Fase 2 completa — visões de mês e semana + filtros.** O Home alterna entre **Mês** (calendário com bolinhas de prioridade) e **Semana** (tarefas de cada dia lado a lado), com navegação ‹ › e botão "Hoje". Filtros por categoria, prioridade e situação valem nas três visões (mês, semana e dia). Export/import JSON completo e testes automatizados em `testes/testes.html`.
 
 ## Como abrir o projeto
 
@@ -44,18 +44,14 @@ Depois abra o endereço mostrado pelo comando (geralmente `http://localhost:3000
 
 ## Como testar (passo atual)
 
-1. Abra pela URL do servidor local (opções acima) — abre no **Home** (calendário + painel lateral).
-2. **Calendário**: veja o mês atual; dia de hoje tem contorno roxo + bolinha; dias 19/20/21 têm bolinhas coloridas (vermelho=alta, roxo=média, azul=baixa).
-3. **Painel lateral** (direita): "Próximos prazos" (3 primeiros), "Top categorias", "Semana" (concluídas/pendentes).
-4. **Clique num dia** no calendário → abre a **tela de tarefas** daquele dia.
-5. Na tela de tarefas: botão **⌂ (Home)** no cabeçalho para voltar ao calendário.
-6. **Navegação entre dias**: botões ‹ › + data por extenso + botão **⌂ Hoje** (roxo) quando não é hoje.
-7. **Criar tarefa**: formulário sugere a data do dia atual; prioridade = linha fina à esquerda (vermelho/roxo/azul).
-8. **Concluir** (ícone ✓): tarefa vai para o fim, `opacity: .35` + risco fino; **Reabrir** (↺) volta pro lugar.
-9. **Editar** (✎): abre modal; **Excluir** (🗑): pede confirmação.
-10. **Volta ao Home** (botão ⌂): bolinhas do calendário e painel lateral atualizados.
-11. **Exportar**: botão no cabeçalho → "Exportar JSON" → baixa `painel-backup-YYYY-MM-DD.json`.
-12. **Importar**: botão no cabeçalho → "Importar JSON" → seleciona arquivo → confirma → recarrega dados.
-13. **Testes automatizados**: abra `http://localhost:5500/testes/testes.html` → clique "▶ Executar todos os testes" → veja ✅/❌ por suite.
-14. **Recarregue**: volta pro Home (hoje); dados intactos.
-15. Console (`F12`): sem erros.
+1. Abra pela URL do servidor local (opções acima) — abre no **Home**, na visão **Mês**.
+2. **Alternador Mês | Semana** (topo, à esquerda): clique em **Semana** para ver os 7 dias (Dom→Sáb) com as tarefas de cada dia em cartões (horário + tarja de prioridade).
+3. **Navegação de período**: botões ‹ › mudam a semana/mês; **Hoje** volta ao período atual (o botão só aparece quando você saiu dele).
+4. **Filtros** (topo, à direita): **Categoria**, **Prioridade** e **Situação** combinam entre si (ex.: Trabalho + Alta + Pendentes); "Limpar filtros" volta ao normal. Vale nas três visões: mês (bolinhas), semana (cartões) e tela do dia (lista).
+5. **Clique num dia** (no calendário, no cabeçalho do dia da semana, ou num cartão de tarefa) → abre a **tela de tarefas** daquele dia.
+6. Na tela do dia: botão **⌂ (Home)** no cabeçalho; navegação ‹ › + **Hoje**; formulário "Nova tarefa" (data já preenchida); ações por ícone: concluir ✓ / reabrir ↺ / editar ✎ / excluir 🗑 (com confirmação).
+7. **Período vazio**: sem tarefas (ou todas filtradas), cada visão mostra uma mensagem clara — ex.: "Nenhuma tarefa nesta semana com os filtros atuais."
+8. **Exportar/Importar**: menu **⋮** no cabeçalho → "Exportar JSON" / "Importar JSON".
+9. **Testes automatizados**: abra `http://localhost:5500/testes/testes.html` → "▶ Executar todos os testes" → veja ✅/❌ por suite.
+10. **Recarregue**: volta pro Home (visão Mês, mês de hoje); dados intactos.
+11. Console (`F12`): sem erros.

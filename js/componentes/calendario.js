@@ -1,9 +1,11 @@
 // Componente: Calendário mensal interativo.
-// Recebe { estado, dataReferencia, aoClicarDia } e monta a grade do mês.
-// Cada dia mostra até 3 bolinhas (alta/média/baixa) se houver tarefas naquele dia.
+// Recebe { estado, dataReferencia, aoClicarDia, aoMudarPeriodo } e monta a grade do mês.
+// Cada dia mostra até 3 bolinhas (alta/média/baixa) se houver tarefas naquele dia,
+// respeitando os filtros ativos.
 
-import { hojeISO } from "../regras/datas.js";
+import { hojeISO, somarMeses } from "../regras/datas.js";
 import { tarefasDoDia } from "../regras/tarefas.js";
+import { filtrarTarefas, temFiltroAtivo } from "../regras/filtros.js";
 
 /**
  * Cria o calendário do mês de `dataReferencia` (qualquer dia do mês).
@@ -11,9 +13,10 @@ import { tarefasDoDia } from "../regras/tarefas.js";
  * @param {Object} params.estado - estado global (para tarefasDoDia)
  * @param {string} params.dataReferencia - "AAAA-MM-DD" de qualquer dia do mês a exibir
  * @param {Function} params.aoClicarDia - callback(dataISO) quando clica num dia válido
+ * @param {Function} [params.aoMudarPeriodo] - callback(novaReferenciaISO) ao navegar entre meses
  * @returns {HTMLElement} section.cartao com o calendário dentro
  */
-export function criarCalendarioMes({ estado, dataReferencia, aoClicarDia }) {
+export function criarCalendarioMes({ estado, dataReferencia, aoClicarDia, aoMudarPeriodo = null }) {
   const cartao = document.createElement("section");
   cartao.className = "cartao";
   cartao.style.padding = "0";
@@ -38,6 +41,27 @@ export function criarCalendarioMes({ estado, dataReferencia, aoClicarDia }) {
   tituloMes.style.cssText = "margin: 0; font-size: 1rem; font-weight: 600;";
   tituloMes.textContent = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric" }).format(primeiroDia);
   cabecalhoMes.appendChild(tituloMes);
+
+  // Navegação entre meses: ‹ › + Hoje
+  // (só aparece quando o chamador passa aoMudarPeriodo)
+  if (aoMudarPeriodo) {
+    const primeiroDiaISO = `${ano}-${String(mes).padStart(2, "0")}-01`;
+    const nav = document.createElement("div");
+    nav.className = "calendario-nav";
+
+    nav.appendChild(criarBotaoNav("‹", "Mês anterior", () => aoMudarPeriodo(somarMeses(primeiroDiaISO, -1))));
+    nav.appendChild(criarBotaoNav("›", "Próximo mês", () => aoMudarPeriodo(somarMeses(primeiroDiaISO, 1))));
+
+    const botaoHoje = document.createElement("button");
+    botaoHoje.type = "button";
+    botaoHoje.className = "botao-discreto";
+    botaoHoje.textContent = "Hoje";
+    botaoHoje.addEventListener("click", () => aoMudarPeriodo(hojeISO()));
+    nav.appendChild(botaoHoje);
+
+    cabecalhoMes.appendChild(nav);
+  }
+
   cartao.appendChild(cabecalhoMes);
 
   // Grid: dias da semana + dias do mês
@@ -73,17 +97,15 @@ export function criarCalendarioMes({ estado, dataReferencia, aoClicarDia }) {
       outroMes: true,
       ehHoje: false,
       ehVisualizado: false,
-      indicadores: [],
       aoClicar: null
     });
     gradeDias.appendChild(btn);
   }
 
   // Dias do mês atual
+  // (as bolinhas de prioridade são preenchidas depois, por atualizarIndicadoresCalendario)
   for (let d = 1; d <= diasNoMes; d++) {
     const dataISO = `${ano}-${String(mes).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    const tarefasDia = tarefasDoDia(estado, dataISO);
-    const indicadores = calcularIndicadores(tarefasDia);
     const ehHoje = dataISO === hoje;
 
     const btn = criarBotaoDia({
@@ -92,7 +114,6 @@ export function criarCalendarioMes({ estado, dataReferencia, aoClicarDia }) {
       outroMes: false,
       ehHoje,
       ehVisualizado: false, // será setado pelo caller se necessário
-      indicadores,
       aoClicar: () => aoClicarDia(dataISO)
     });
     gradeDias.appendChild(btn);
@@ -110,14 +131,22 @@ export function criarCalendarioMes({ estado, dataReferencia, aoClicarDia }) {
       outroMes: true,
       ehHoje: false,
       ehVisualizado: false,
-      indicadores: [],
       aoClicar: null
     });
     gradeDias.appendChild(btn);
   }
 
+  // Aviso mostrado quando o mês inteiro está vazio (respeita filtros)
+  const avisoVazio = document.createElement("div");
+  avisoVazio.className = "calendario-aviso-vazio";
+  avisoVazio.hidden = true;
+  gradeDias.appendChild(avisoVazio);
+
   grade.appendChild(gradeDias);
   cartao.appendChild(grade);
+
+  // Preenche as bolinhas já na primeira montagem (e mostra o aviso, se preciso)
+  atualizarIndicadoresCalendario(gradeDias, estado);
 
   // Expõe a grade para updates futuros
   cartao.gradeDias = gradeDias;
@@ -147,7 +176,7 @@ function calcularIndicadores(tarefas) {
 /**
  * Cria o <button> de um dia do calendário.
  */
-function criarBotaoDia({ numero, dataISO, outroMes, ehHoje, ehVisualizado, indicadores, aoClicar }) {
+function criarBotaoDia({ numero, dataISO, outroMes, ehHoje, ehVisualizado, aoClicar }) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "calendario-dia";
@@ -172,37 +201,32 @@ function criarBotaoDia({ numero, dataISO, outroMes, ehHoje, ehVisualizado, indic
   spanNumero.textContent = numero;
   btn.appendChild(spanNumero);
 
-  if (indicadores.length > 0) {
-    const indContainer = document.createElement("span");
-    indContainer.className = "calendario-indicadores";
-    for (const prio of indicadores) {
-      const bolinha = document.createElement("span");
-      bolinha.className = `calendario-indicador ${prio}`;
-      indContainer.appendChild(bolinha);
-    }
-    btn.appendChild(indContainer);
-  }
-
+  // As bolinhas de prioridade são adicionadas depois, por atualizarIndicadoresCalendario.
   return btn;
 }
 
 /**
- * Atualiza apenas as bolinhas de prioridade nos botões do calendário.
- * Chame após criar/excluir/concluir tarefas.
+ * Atualiza as bolinhas de prioridade dos dias (respeitando os filtros ativos)
+ * e mostra/esconde o aviso de "mês vazio".
+ * Chame após criar/excluir/concluir tarefas ou ao mudar os filtros.
  */
 export function atualizarIndicadoresCalendario(gradeElement, estado) {
   const botoes = gradeElement.querySelectorAll(".calendario-dia:not(.outro-mes)");
+  let totalDeTarefas = 0;
+
   botoes.forEach((btn) => {
     const dataISO = btn.getAttribute("data-iso");
     if (!dataISO) return;
-    const tarefasDia = tarefasDoDia(estado, dataISO);
-    const indicadores = calcularIndicadores(tarefasDia);
 
-    // Remove container antigo
+    const tarefasDia = filtrarTarefas(tarefasDoDia(estado, dataISO), dataISO);
+    totalDeTarefas += tarefasDia.length;
+
+    // Remove o container antigo de bolinhas
     const antigo = btn.querySelector(".calendario-indicadores");
     if (antigo) antigo.remove();
 
-    // Adiciona novo se houver
+    // Adiciona o novo, se houver
+    const indicadores = calcularIndicadores(tarefasDia);
     if (indicadores.length > 0) {
       const indContainer = document.createElement("span");
       indContainer.className = "calendario-indicadores";
@@ -214,6 +238,19 @@ export function atualizarIndicadoresCalendario(gradeElement, estado) {
       btn.appendChild(indContainer);
     }
   });
+
+  // Aviso de "mês vazio" (considerando os filtros ativos)
+  const aviso = gradeElement.querySelector(".calendario-aviso-vazio");
+  if (aviso) {
+    if (totalDeTarefas === 0) {
+      aviso.textContent = temFiltroAtivo()
+        ? "Nenhuma tarefa neste mês com os filtros atuais."
+        : "Nenhuma tarefa neste mês.";
+      aviso.hidden = false;
+    } else {
+      aviso.hidden = true;
+    }
+  }
 }
 
 /**
@@ -224,4 +261,15 @@ export function atualizarDiaVisualizadoCalendario(gradeElement, dataISO) {
   botoes.forEach((btn) => {
     btn.classList.toggle("visualizado", btn.getAttribute("data-iso") === dataISO);
   });
+}
+
+// Botão-ícone da navegação do calendário (‹ ›), com tooltip via aria-label.
+function criarBotaoNav(texto, ariaLabel, aoClicar) {
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "botao-icone";
+  botao.setAttribute("aria-label", ariaLabel);
+  botao.textContent = texto;
+  botao.addEventListener("click", aoClicar);
+  return botao;
 }

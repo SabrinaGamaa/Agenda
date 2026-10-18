@@ -14,6 +14,8 @@ import {
 } from "../regras/tarefas.js";
 import { criarFormularioTarefa } from "../componentes/formulario-tarefa.js";
 import { abrirModal } from "../componentes/modal.js";
+import { criarBarraFiltros } from "../componentes/barra-filtros.js";
+import { filtrarTarefas, temFiltroAtivo } from "../regras/filtros.js";
 import { salvar } from "../dados/armazenamento.js";
 import { atualizarHome, marcarDiaVisualizadoNoCalendario } from "./inicio.js";
 
@@ -79,6 +81,10 @@ function criarCartaoDaLista(estado, mensagem) {
 
   cartao.appendChild(titulo);
   cartao.appendChild(criarBarraDeNavegacao(estado));
+  cartao.appendChild(criarBarraFiltros({
+    categorias: estado.config.categoriasTarefas,
+    aoMudar: () => desenharTarefasDoDia(estado)
+  }));
 
   if (mensagem) {
     const sucesso = document.createElement("p");
@@ -87,15 +93,21 @@ function criarCartaoDaLista(estado, mensagem) {
     cartao.appendChild(sucesso);
   }
 
-  // Pendentes primeiro (mais cedo primeiro); concluídas vão para o fim.
-  const tarefasOrdenadas = ordenarTarefasDoDia(tarefasDoDia(estado, dataVisualizada), dataVisualizada);
+  // Aplica os filtros ativos e ordena: pendentes primeiro (mais cedo primeiro),
+  // concluídas no fim.
+  const tarefasFiltradas = filtrarTarefas(tarefasDoDia(estado, dataVisualizada), dataVisualizada);
+  const tarefasOrdenadas = ordenarTarefasDoDia(tarefasFiltradas, dataVisualizada);
 
   if (tarefasOrdenadas.length === 0) {
     const vazio = document.createElement("p");
     vazio.className = "estado-vazio";
-    vazio.textContent = ehHoje
-      ? "Nenhuma tarefa para hoje. Crie uma no formulário acima."
-      : "Nenhuma tarefa neste dia.";
+    if (temFiltroAtivo()) {
+      vazio.textContent = "Nenhuma tarefa neste dia com os filtros atuais.";
+    } else {
+      vazio.textContent = ehHoje
+        ? "Nenhuma tarefa para hoje. Crie uma no formulário acima."
+        : "Nenhuma tarefa neste dia.";
+    }
     cartao.appendChild(vazio);
   } else {
     const lista = document.createElement("ul");
@@ -105,11 +117,6 @@ function criarCartaoDaLista(estado, mensagem) {
     }
     cartao.appendChild(lista);
   }
-
-  const aviso = document.createElement("p");
-  aviso.className = "aviso-desenvolvimento";
-  aviso.textContent = "Versão em desenvolvimento: exportação e importação dos dados chegam no próximo passo.";
-  cartao.appendChild(aviso);
 
   return cartao;
 }

@@ -738,6 +738,322 @@ a:hover { text-decoration: underline; }
 }
 
 /* ==========================================================================
+   HOME: BARRA DE VISÃO E FILTROS
+   ========================================================================== */
+
+.home-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco);
+  flex-wrap: wrap;
+  margin-bottom: var(--espaco);
+}
+
+/* Alternador Mês | Semana */
+.alternador-visao {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-input);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+}
+
+.alternador-botao {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--texto-suave);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+
+.alternador-botao:hover {
+  color: var(--texto);
+}
+
+.alternador-botao.ativo {
+  background: var(--acento-suave);
+  color: var(--texto);
+  font-weight: 600;
+}
+
+/* Filtros: Categoria, Prioridade, Situação */
+.barra-filtros {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-pequeno);
+  flex-wrap: wrap;
+}
+
+.filtro-campo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filtro-rotulo {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texto-fraco);
+}
+
+.filtro-campo select {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  background: var(--bg-input);
+  color: var(--texto);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  cursor: pointer;
+}
+
+.filtro-campo select:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-suave);
+}
+
+/* Botão discreto (Hoje, Limpar filtros) */
+.botao-discreto {
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 10px;
+  background: transparent;
+  color: var(--texto-suave);
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-pequeno);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.botao-discreto:hover {
+  background: var(--bg-hover);
+  color: var(--texto);
+  border-color: var(--acento);
+}
+
+/* ==========================================================================
+   VISÃO DE SEMANA
+   ========================================================================== */
+
+.cartao-semana {
+  padding: 0;
+}
+
+.semana-cabecalho {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-pequeno);
+  padding: var(--espaco-pequeno) var(--espaco);
+  background: var(--bg-input);
+  border-bottom: 1px solid var(--borda);
+  border-radius: var(--raio) var(--raio) 0 0;
+}
+
+.semana-cabecalho .botao-icone {
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.semana-rotulo {
+  flex: 1;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--texto);
+}
+
+.semana-grade {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.semana-coluna {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 220px;
+  border-right: 1px solid var(--borda);
+}
+
+.semana-coluna:last-child {
+  border-right: none;
+}
+
+.semana-dia-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--espaco-pequeno) 4px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--borda);
+  color: var(--texto);
+  font: inherit;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+
+.semana-dia-btn:hover {
+  background: var(--bg-hover);
+}
+
+.semana-dia-nome {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texto-fraco);
+}
+
+.semana-dia-num {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.semana-coluna.hoje .semana-dia-nome {
+  color: var(--acento);
+}
+
+.semana-coluna.hoje .semana-dia-num {
+  color: var(--acento);
+  font-weight: 600;
+}
+
+.semana-tarefas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--espaco-pequeno);
+  flex: 1;
+}
+
+.semana-tarefa {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  text-align: left;
+  font: inherit;
+  padding: 8px;
+  background: var(--bg-input);
+  color: var(--texto);
+  border: 1px solid var(--borda);
+  border-left: 2px solid transparent;
+  border-radius: var(--raio-pequeno);
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+
+.semana-tarefa:hover {
+  background: var(--bg-hover);
+  border-color: var(--borda-forte);
+}
+
+.semana-tarefa.prioridade-alta {
+  border-left-color: var(--prio-alta);
+}
+
+.semana-tarefa.prioridade-media {
+  border-left-color: var(--prio-media);
+}
+
+.semana-tarefa.prioridade-baixa {
+  border-left-color: var(--prio-baixa);
+}
+
+.semana-tarefa.concluida {
+  opacity: 0.35;
+}
+
+.semana-tarefa.concluida .semana-tarefa-titulo {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--texto-fraco);
+}
+
+.semana-tarefa-hora {
+  font-size: 0.7rem;
+  color: var(--texto-fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+.semana-tarefa-titulo {
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.semana-vazia {
+  margin: 0;
+  text-align: center;
+  color: var(--texto-fraco);
+  font-size: 0.8rem;
+}
+
+.semana-aviso-vazio {
+  margin: 0;
+  padding: var(--espaco);
+  border-top: 1px solid var(--borda);
+  text-align: center;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+/* Navegação do mês dentro do calendário da home */
+.calendario-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.calendario-nav .botao-icone {
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+}
+
+.calendario-nav .botao-discreto {
+  margin-left: 6px;
+}
+
+/* Aviso de "mês vazio" dentro da grade do calendário */
+.calendario-aviso-vazio {
+  grid-column: 1 / -1;
+  padding: var(--espaco-pequeno) var(--espaco);
+  text-align: center;
+  color: var(--texto-suave);
+  font-size: 0.8rem;
+}
+
+/* Mobile: a semana rola na horizontal em vez de espremer as colunas */
+@media (max-width: 700px) {
+  .cartao-semana {
+    overflow-x: auto;
+  }
+
+  .semana-grade {
+    min-width: 640px;
+  }
+}
+
+/* ==========================================================================
    UTILITÁRIOS
    ========================================================================== */
 .sr-only {
