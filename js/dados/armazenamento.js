@@ -41,7 +41,8 @@ export function salvar(estado) {
 }
 
 // A forma do "documento" que guarda tudo. Cresce conforme as fases avançam.
-function criarEstadoInicial() {
+// Exportada para os testes conseguirem conferir a estrutura inicial.
+export function criarEstadoInicial() {
   return {
     schemaVersion: VERSAO_ESQUEMA,
     config: {
