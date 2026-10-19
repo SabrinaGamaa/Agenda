@@ -29,6 +29,23 @@ export function somarDias(dataISO, dias) {
   return `${ano}-${mes}-${dia}`;
 }
 
+// Dia da semana de uma data (0 = domingo ... 6 = sábado).
+// Usa UTC para não sofrer influência de fuso horário nem de horário de verão.
+export function diaDaSemana(dataISO) {
+  const [ano, mes, dia] = dataISO.split("-").map(Number);
+  return new Date(Date.UTC(ano, mes - 1, dia)).getUTCDay();
+}
+
+// Diferença em dias entre duas datas (fim - início), sem depender de fuso horário.
+// Exemplo: diferencaEmDias("2026-10-18", "2026-10-25") -> 7
+export function diferencaEmDias(dataInicioISO, dataFimISO) {
+  const [anoInicio, mesInicio, diaInicio] = dataInicioISO.split("-").map(Number);
+  const [anoFim, mesFim, diaFim] = dataFimISO.split("-").map(Number);
+  const inicioUTC = Date.UTC(anoInicio, mesInicio - 1, diaInicio);
+  const fimUTC = Date.UTC(anoFim, mesFim - 1, diaFim);
+  return Math.round((fimUTC - inicioUTC) / 86400000);
+}
+
 // "2026-10-18" -> "18/10/2026"
 export function formatarData(dataISO) {
   const [ano, mes, dia] = dataISO.split("-");

@@ -1,7 +1,7 @@
 // Testes para js/regras/datas.js
 
 import { describe } from "./testes.js";
-import { hojeISO, somarDias, somarMeses, inicioDaSemana, rotuloSemana, formatarData, formatarDataLonga, somarMinutos, formatarDuracao } from "../js/regras/datas.js";
+import { hojeISO, somarDias, somarMeses, inicioDaSemana, rotuloSemana, formatarData, formatarDataLonga, somarMinutos, formatarDuracao, diaDaSemana, diferencaEmDias } from "../js/regras/datas.js";
 
 describe("datas", (suite) => {
   suite.test("hojeISO retorna string AAAA-MM-DD", (Assert) => {
@@ -16,6 +16,22 @@ describe("datas", (suite) => {
     Assert.equals(somarDias("2026-12-31", 1), "2027-01-01", "virada de ano");
     Assert.equals(somarDias("2026-02-28", 1), "2026-03-01", "fevereiro não bissexto");
     Assert.equals(somarDias("2024-02-28", 1), "2024-02-29", "fevereiro bissexto");
+  });
+
+  suite.test("diaDaSemana devolve 0 (domingo) a 6 (sábado)", (Assert) => {
+    Assert.equals(diaDaSemana("2026-10-18"), 0, "domingo");
+    Assert.equals(diaDaSemana("2026-10-19"), 1, "segunda");
+    Assert.equals(diaDaSemana("2026-10-24"), 6, "sábado");
+    Assert.equals(diaDaSemana("2026-11-01"), 0, "domingo de outro mês");
+  });
+
+  suite.test("diferencaEmDias conta os dias entre duas datas", (Assert) => {
+    Assert.equals(diferencaEmDias("2026-10-18", "2026-10-25"), 7, "uma semana");
+    Assert.equals(diferencaEmDias("2026-10-25", "2026-10-18"), -7, "ordem inversa");
+    Assert.equals(diferencaEmDias("2026-10-31", "2026-11-01"), 1, "virada de mês");
+    Assert.equals(diferencaEmDias("2026-12-31", "2027-01-01"), 1, "virada de ano");
+    Assert.equals(diferencaEmDias("2024-02-28", "2024-03-01"), 2, "ano bissexto");
+    Assert.equals(diferencaEmDias("2026-02-28", "2026-03-01"), 1, "ano não bissexto");
   });
 
   suite.test("formatarData converte AAAA-MM-DD para DD/MM/AAAA", (Assert) => {
