@@ -4,13 +4,13 @@
 // respeitando os filtros ativos.
 
 import { hojeISO, somarMeses } from "../regras/datas.js";
-import { tarefasDoDia } from "../regras/tarefas.js";
+import { ocorrenciasDoDia } from "../regras/tarefas.js";
 import { filtrarTarefas, temFiltroAtivo } from "../regras/filtros.js";
 
 /**
  * Cria o calendário do mês de `dataReferencia` (qualquer dia do mês).
  * @param {Object} params
- * @param {Object} params.estado - estado global (para tarefasDoDia)
+ * @param {Object} params.estado - estado global (para ocorrenciasDoDia)
  * @param {string} params.dataReferencia - "AAAA-MM-DD" de qualquer dia do mês a exibir
  * @param {Function} params.aoClicarDia - callback(dataISO) quando clica num dia válido
  * @param {Function} [params.aoMudarPeriodo] - callback(novaReferenciaISO) ao navegar entre meses
@@ -218,7 +218,7 @@ export function atualizarIndicadoresCalendario(gradeElement, estado) {
     const dataISO = btn.getAttribute("data-iso");
     if (!dataISO) return;
 
-    const tarefasDia = filtrarTarefas(tarefasDoDia(estado, dataISO), dataISO);
+    const tarefasDia = filtrarTarefas(ocorrenciasDoDia(estado, dataISO), dataISO);
     totalDeTarefas += tarefasDia.length;
 
     // Remove o container antigo de bolinhas

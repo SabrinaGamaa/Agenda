@@ -3,7 +3,7 @@
 // Colapsa embaixo no mobile (CSS grid cuida via @media).
 
 import { hojeISO, somarDias, formatarData } from "../regras/datas.js";
-import { tarefasDoDia, ordenarTarefasDoDia, estaConcluida } from "../regras/tarefas.js";
+import { ocorrenciasDoDia, estaConcluida } from "../regras/tarefas.js";
 
 /**
  * Cria o painel lateral completo.
@@ -49,17 +49,19 @@ function criarCardProximosPrazos(estado) {
   const tarefasFuturas = [];
   for (let i = 0; i < 14; i++) {
     const data = somarDias(hoje, i);
-    const tarefasDia = tarefasDoDia(estado, data);
+    const tarefasDia = ocorrenciasDoDia(estado, data);
     for (const t of tarefasDia) {
       if (!estaConcluida(t, data)) {
-        tarefasFuturas.push({ ...t, data });
+        tarefasFuturas.push(t);
       }
     }
   }
 
   // Ordena por data + horário
   tarefasFuturas.sort((a, b) => {
-    if (a.data !== b.data) return a.data.localeCompare(b.data);
+    if (a.dataOcorrencia !== b.dataOcorrencia) {
+      return a.dataOcorrencia.localeCompare(b.dataOcorrencia);
+    }
     return a.horaInicio.localeCompare(b.horaInicio);
   });
 
@@ -102,7 +104,8 @@ function criarItemPrazo(tarefa) {
 
   const meta = document.createElement("div");
   meta.className = "painel-item-meta";
-  const labelData = tarefa.data === hojeISO() ? "Hoje" : tarefa.data === somarDias(hojeISO(), 1) ? "Amanhã" : formatarData(tarefa.data);
+  const dataOcorrencia = tarefa.dataOcorrencia ?? tarefa.data;
+  const labelData = dataOcorrencia === hojeISO() ? "Hoje" : dataOcorrencia === somarDias(hojeISO(), 1) ? "Amanhã" : formatarData(dataOcorrencia);
   meta.textContent = `${labelData} · ${tarefa.horaInicio} · ${labelPrioridade(tarefa.prioridade)}`;
 
   conteudo.appendChild(titulo);
@@ -132,7 +135,7 @@ function criarCardTopCategorias(estado) {
   const contagem = {};
   for (let i = 0; i < 30; i++) {
     const data = somarDias(hoje, i);
-    const tarefasDia = tarefasDoDia(estado, data);
+    const tarefasDia = ocorrenciasDoDia(estado, data);
     for (const t of tarefasDia) {
       if (!estaConcluida(t, data)) {
         contagem[t.categoria] = (contagem[t.categoria] || 0) + 1;
@@ -213,7 +216,7 @@ function criarCardResumoSemana(estado) {
   // Últimos 7 dias (incluindo hoje)
   for (let i = -6; i <= 0; i++) {
     const data = somarDias(hoje, i);
-    const tarefasDia = tarefasDoDia(estado, data);
+    const tarefasDia = ocorrenciasDoDia(estado, data);
     for (const t of tarefasDia) {
       if (estaConcluida(t, data)) concluidas++;
       else pendentes++;

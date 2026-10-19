@@ -6,7 +6,7 @@ O plano completo do projeto (fases, modelo de dados, regras e critérios de conc
 
 ## Situação atual
 
-**Fase 2 completa — visões de mês e semana + filtros.** O Home alterna entre **Mês** (calendário com bolinhas de prioridade) e **Semana** (tarefas de cada dia lado a lado), com navegação ‹ › e botão "Hoje". Filtros por categoria, prioridade e situação valem nas três visões (mês, semana e dia). Export/import JSON completo e testes automatizados em `testes/testes.html`.
+**Fase 2 completa; Fase 3 em andamento.** O Home alterna entre **Mês** (calendário com bolinhas de prioridade) e **Semana** (tarefas de cada dia lado a lado), com navegação ‹ › e botão "Hoje". Filtros por categoria, prioridade e situação valem nas três visões (mês, semana e dia). As ocorrências de tarefas recorrentes já são calculadas e exibidas nas três visões; a criação e a edição de recorrências pela interface chegam nos próximos passos da Fase 3. Export/import JSON completo e testes automatizados em `testes/testes.html`.
 
 ## Como abrir o projeto
 

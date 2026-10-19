@@ -4,6 +4,7 @@ import { describe } from "./testes.js";
 import {
   criarTarefa,
   tarefasDoDia,
+  ocorrenciasDoDia,
   ordenarTarefasDoDia,
   encontrarTarefa,
   estaConcluida,
@@ -57,6 +58,79 @@ describe("tarefas", (suite) => {
     const hoje = tarefasDoDia(estado, "2026-10-18");
     Assert.length(hoje, 1, "apenas 1 tarefa de hoje");
     Assert.equals(hoje[0].titulo, "A");
+  });
+
+  // --- ocorrenciasDoDia ---
+  suite.test("ocorrenciasDoDia inclui tarefa única e séries recorrentes", (Assert) => {
+    const unica = criarTarefa({ titulo: "Única", descricao: "", categoria: "Trabalho", prioridade: "media", data: "2026-10-18", horaInicio: "09:00", duracaoMinutos: 30 });
+    const diaria = criarTarefa({ titulo: "Diária", descricao: "", categoria: "Estudos", prioridade: "alta", data: "2026-10-18", horaInicio: "10:00", duracaoMinutos: 60 });
+    diaria.recorrencia = { tipo: "diaria", intervalo: 1, fim: { tipo: "nunca" } };
+    estado.tarefas.push(unica, diaria);
+
+    const dia18 = ocorrenciasDoDia(estado, "2026-10-18");
+    Assert.length(dia18, 2, "duas ocorrências no dia 18");
+    Assert.true(dia18.every((o) => o.dataOcorrencia === "2026-10-18"), "dataOcorrencia preenchida");
+    Assert.true(dia18.some((o) => o.id === unica.id), "tarefa única presente");
+    Assert.true(dia18.some((o) => o.id === diaria.id), "série presente");
+
+    const dia25 = ocorrenciasDoDia(estado, "2026-10-25");
+    Assert.length(dia25, 1, "só a série ocorre no dia 25");
+    Assert.equals(dia25[0].id, diaria.id, "id da série");
+    Assert.true(dia25[0].tarefaOriginal === diaria, "referência à definição original");
+    Assert.equals(dia25[0].data, "2026-10-18", "data da definição continua sendo o início da série");
+  });
+
+  suite.test("ocorrência aplica ajustes da data sem alterar a série", (Assert) => {
+    const diaria = criarTarefa({ titulo: "Original", descricao: "", categoria: "Estudos", prioridade: "alta", data: "2026-10-18", horaInicio: "09:00", duracaoMinutos: 30 });
+    diaria.recorrencia = { tipo: "diaria", intervalo: 1, fim: { tipo: "nunca" } };
+    diaria.excecoes["2026-10-19"] = { titulo: "Ajustada", horaInicio: "15:00", duracaoMinutos: 45 };
+    estado.tarefas.push(diaria);
+
+    const ocorrencia = ocorrenciasDoDia(estado, "2026-10-19")[0];
+    Assert.true(ocorrencia !== diaria, "ocorrência é um objeto novo");
+    Assert.equals(ocorrencia.titulo, "Ajustada", "título ajustado");
+    Assert.equals(ocorrencia.horaInicio, "15:00", "horário ajustado");
+    Assert.equals(ocorrencia.duracaoMinutos, 45, "duração ajustada");
+    Assert.equals(ocorrencia.dataOcorrencia, "2026-10-19", "data da ocorrência");
+    Assert.equals(diaria.titulo, "Original", "definição intacta");
+    Assert.equals(diaria.horaInicio, "09:00", "horário da série intacto");
+  });
+
+  suite.test("ocorrenciasDoDia remove canceladas e respeita o fim da série", (Assert) => {
+    const diaria = criarTarefa({ titulo: "Diária", descricao: "", categoria: "Estudos", prioridade: "alta", data: "2026-10-18", horaInicio: "09:00", duracaoMinutos: 30 });
+    diaria.recorrencia = { tipo: "diaria", intervalo: 1, fim: { tipo: "emData", data: "2026-10-20" } };
+    diaria.excecoes["2026-10-19"] = { cancelada: true };
+    estado.tarefas.push(diaria);
+
+    Assert.length(ocorrenciasDoDia(estado, "2026-10-18"), 1, "18 aparece");
+    Assert.length(ocorrenciasDoDia(estado, "2026-10-19"), 0, "19 cancelada");
+    Assert.length(ocorrenciasDoDia(estado, "2026-10-20"), 1, "20 é o último dia da série");
+    Assert.length(ocorrenciasDoDia(estado, "2026-10-21"), 0, "21 depois do fim");
+  });
+
+  suite.test("conclusão de uma ocorrência não afeta as outras", (Assert) => {
+    const diaria = criarTarefa({ titulo: "Diária", descricao: "", categoria: "Estudos", prioridade: "alta", data: "2026-10-18", horaInicio: "09:00", duracaoMinutos: 30 });
+    diaria.recorrencia = { tipo: "diaria", intervalo: 1, fim: { tipo: "nunca" } };
+    estado.tarefas.push(diaria);
+
+    alternarConclusao(estado, diaria.id, "2026-10-19");
+
+    const dia19 = ocorrenciasDoDia(estado, "2026-10-19")[0];
+    const dia20 = ocorrenciasDoDia(estado, "2026-10-20")[0];
+    Assert.true(estaConcluida(dia19, "2026-10-19"), "19 concluída");
+    Assert.false(estaConcluida(dia20, "2026-10-20"), "20 continua pendente");
+  });
+
+  suite.test("ordenação usa o horário ajustado da ocorrência", (Assert) => {
+    const serie = criarTarefa({ titulo: "Série", descricao: "", categoria: "Estudos", prioridade: "alta", data: "2026-10-18", horaInicio: "09:00", duracaoMinutos: 30 });
+    serie.recorrencia = { tipo: "diaria", intervalo: 1, fim: { tipo: "nunca" } };
+    serie.excecoes["2026-10-19"] = { horaInicio: "16:00" };
+
+    const outra = criarTarefa({ titulo: "Outra", descricao: "", categoria: "Trabalho", prioridade: "media", data: "2026-10-19", horaInicio: "11:00", duracaoMinutos: 30 });
+    estado.tarefas.push(serie, outra);
+
+    const lista = ordenarTarefasDoDia(ocorrenciasDoDia(estado, "2026-10-19"), "2026-10-19");
+    Assert.equals(lista.map((o) => o.titulo).join("|"), "Outra|Série", "11:00 antes do horário ajustado para 16:00");
   });
 
   // --- encontrarTarefa ---

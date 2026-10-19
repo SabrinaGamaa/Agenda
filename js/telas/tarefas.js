@@ -5,13 +5,14 @@
 import { hojeISO, somarDias, formatarData, formatarDataLonga, somarMinutos, formatarDuracao } from "../regras/datas.js";
 import {
   criarTarefa,
-  tarefasDoDia,
+  ocorrenciasDoDia,
   ordenarTarefasDoDia,
   estaConcluida,
   alternarConclusao,
   atualizarTarefa,
   excluirTarefa
 } from "../regras/tarefas.js";
+import { ehRecorrente } from "../regras/recorrencia.js";
 import { criarFormularioTarefa } from "../componentes/formulario-tarefa.js";
 import { abrirModal } from "../componentes/modal.js";
 import { criarBarraFiltros } from "../componentes/barra-filtros.js";
@@ -95,7 +96,7 @@ function criarCartaoDaLista(estado, mensagem) {
 
   // Aplica os filtros ativos e ordena: pendentes primeiro (mais cedo primeiro),
   // concluídas no fim.
-  const tarefasFiltradas = filtrarTarefas(tarefasDoDia(estado, dataVisualizada), dataVisualizada);
+  const tarefasFiltradas = filtrarTarefas(ocorrenciasDoDia(estado, dataVisualizada), dataVisualizada);
   const tarefasOrdenadas = ordenarTarefasDoDia(tarefasFiltradas, dataVisualizada);
 
   if (tarefasOrdenadas.length === 0) {
@@ -174,19 +175,21 @@ function criarBotaoNavegacao(texto, ariaLabel, aoClicar, destaque = false) {
   return botao;
 }
 
-function criarItemTarefa(estado, tarefa, dataISO) {
-  const concluida = estaConcluida(tarefa, dataISO);
-  const { horaFinal, diaSeguinte } = somarMinutos(tarefa.horaInicio, tarefa.duracaoMinutos);
+function criarItemTarefa(estado, ocorrencia, dataISO) {
+  const tarefaOriginal = ocorrencia.tarefaOriginal ?? ocorrencia;
+  const recorrente = ehRecorrente(tarefaOriginal);
+  const concluida = estaConcluida(ocorrencia, dataISO);
+  const { horaFinal, diaSeguinte } = somarMinutos(ocorrencia.horaInicio, ocorrencia.duracaoMinutos);
 
   const item = document.createElement("li");
-  item.className = `tarefa prioridade-${tarefa.prioridade}${concluida ? " concluida" : ""}`;
+  item.className = `tarefa prioridade-${ocorrencia.prioridade}${concluida ? " concluida" : ""}`;
 
   const esquerda = document.createElement("div");
   esquerda.className = "tarefa-esquerda";
 
   const horario = document.createElement("span");
   horario.className = "tarefa-horario";
-  horario.textContent = `${tarefa.horaInicio}–${horaFinal}${diaSeguinte ? " (dia seguinte)" : ""}`;
+  horario.textContent = `${ocorrencia.horaInicio}–${horaFinal}${diaSeguinte ? " (dia seguinte)" : ""}`;
 
   esquerda.appendChild(horario);
 
@@ -195,14 +198,17 @@ function criarItemTarefa(estado, tarefa, dataISO) {
 
   const tituloTarefa = document.createElement("span");
   tituloTarefa.className = "tarefa-titulo";
-  tituloTarefa.textContent = tarefa.titulo;
+  tituloTarefa.textContent = ocorrencia.titulo;
   corpo.appendChild(tituloTarefa);
 
   const detalhes = document.createElement("span");
   detalhes.className = "tarefa-detalhes";
-  const partes = [tarefa.categoria, formatarDuracao(tarefa.duracaoMinutos)];
-  if (tarefa.descricao) {
-    partes.push(tarefa.descricao);
+  const partes = [ocorrencia.categoria, formatarDuracao(ocorrencia.duracaoMinutos)];
+  if (recorrente) {
+    partes.push("↻ recorrente");
+  }
+  if (ocorrencia.descricao) {
+    partes.push(ocorrencia.descricao);
   }
   detalhes.textContent = partes.join(" · ");
   corpo.appendChild(detalhes);
@@ -216,9 +222,12 @@ function criarItemTarefa(estado, tarefa, dataISO) {
       concluida ? "reabrir" : "concluir",
       concluida ? "Reabrir" : "Concluir",
       () => {
-        alternarConclusao(estado, tarefa.id, dataISO);
+        alternarConclusao(estado, ocorrencia.id, dataISO);
         salvar(estado);
-        desenharTarefasDoDia(estado, concluida ? "Tarefa reaberta!" : "Tarefa concluída!");
+        const mensagem = recorrente
+          ? (concluida ? "Ocorrência reaberta!" : "Ocorrência concluída!")
+          : (concluida ? "Tarefa reaberta!" : "Tarefa concluída!");
+        desenharTarefasDoDia(estado, mensagem);
       }
     )
   );
@@ -226,9 +235,11 @@ function criarItemTarefa(estado, tarefa, dataISO) {
   acoes.appendChild(
     criarBotaoAcao(
       "editar",
-      "Editar",
+      recorrente ? "Editar série" : "Editar",
       () => {
-        abrirEdicaoDeTarefa(estado, tarefa);
+        // Nesta etapa, editar uma ocorrência recorrente edita a série inteira.
+        // O "somente esta ocorrência" entra no passo das exceções.
+        abrirEdicaoDeTarefa(estado, tarefaOriginal);
       }
     )
   );
@@ -236,9 +247,9 @@ function criarItemTarefa(estado, tarefa, dataISO) {
   acoes.appendChild(
     criarBotaoAcao(
       "excluir",
-      "Excluir",
+      recorrente ? "Excluir série" : "Excluir",
       () => {
-        confirmarExclusaoDeTarefa(estado, tarefa);
+        confirmarExclusaoDeTarefa(estado, tarefaOriginal);
       }
     )
   );
@@ -260,9 +271,11 @@ function abrirEdicaoDeTarefa(estado, tarefa) {
       salvar(estado);
       modal.close();
 
-      // Se a edição mudou a tarefa de dia, ela sai da lista atual: avisamos disso.
-      const mensagem =
-        tarefa.data === dataVisualizada
+      // Nesta etapa, uma tarefa recorrente é editada como série inteira.
+      // Se a edição mudou uma tarefa única de dia, avisamos que ela saiu da lista.
+      const mensagem = ehRecorrente(tarefa)
+        ? "Série atualizada!"
+        : tarefa.data === dataVisualizada
           ? "Tarefa atualizada!"
           : `Tarefa movida para ${formatarData(tarefa.data)} — navegue até esse dia para vê-la.`;
       desenharTarefasDoDia(estado, mensagem);
@@ -270,16 +283,22 @@ function abrirEdicaoDeTarefa(estado, tarefa) {
     aoCancelar: () => modal.close()
   });
 
-  const modal = abrirModal({ titulo: "Editar tarefa", conteudo: formulario });
+  const modal = abrirModal({
+    titulo: ehRecorrente(tarefa) ? "Editar série" : "Editar tarefa",
+    conteudo: formulario
+  });
 }
 
 // Pede confirmação antes de excluir de vez.
 function confirmarExclusaoDeTarefa(estado, tarefa) {
+  const recorrente = ehRecorrente(tarefa);
   const conteudo = document.createElement("div");
 
   const texto = document.createElement("p");
   texto.className = "modal-texto";
-  texto.textContent = `Excluir a tarefa “${tarefa.titulo}”? Esta ação não pode ser desfeita.`;
+  texto.textContent = recorrente
+    ? `Excluir a série “${tarefa.titulo}”? Todas as ocorrências serão removidas. Esta ação não pode ser desfeita.`
+    : `Excluir a tarefa “${tarefa.titulo}”? Esta ação não pode ser desfeita.`;
 
   const grupo = document.createElement("div");
   grupo.className = "grupo-botoes";
@@ -298,7 +317,7 @@ function confirmarExclusaoDeTarefa(estado, tarefa) {
     excluirTarefa(estado, tarefa.id);
     salvar(estado);
     modal.close();
-    desenharTarefasDoDia(estado, "Tarefa excluída.");
+    desenharTarefasDoDia(estado, recorrente ? "Série excluída." : "Tarefa excluída.");
   });
 
   grupo.appendChild(cancelar);
@@ -306,7 +325,10 @@ function confirmarExclusaoDeTarefa(estado, tarefa) {
   conteudo.appendChild(texto);
   conteudo.appendChild(grupo);
 
-  const modal = abrirModal({ titulo: "Excluir tarefa", conteudo });
+  const modal = abrirModal({
+    titulo: recorrente ? "Excluir série" : "Excluir tarefa",
+    conteudo
+  });
 }
 
 // Botão de ação da tarefa (ícone + tooltip via aria-label)

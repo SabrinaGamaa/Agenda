@@ -4,7 +4,7 @@
 // editar e concluir).
 
 import { hojeISO, somarDias, inicioDaSemana, rotuloSemana } from "../regras/datas.js";
-import { tarefasDoDia, ordenarTarefasDoDia, estaConcluida } from "../regras/tarefas.js";
+import { ocorrenciasDoDia, ordenarTarefasDoDia, estaConcluida } from "../regras/tarefas.js";
 import { filtrarTarefas, temFiltroAtivo } from "../regras/filtros.js";
 
 const DIAS_CURTOS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -73,7 +73,7 @@ export function criarVisaoSemana({ estado, dataReferencia, aoClicarDia, aoMudarP
     for (let i = 0; i < 7; i++) {
       const dataISO = somarDias(domingo, i);
       const tarefas = ordenarTarefasDoDia(
-        filtrarTarefas(tarefasDoDia(estado, dataISO), dataISO),
+        filtrarTarefas(ocorrenciasDoDia(estado, dataISO), dataISO),
         dataISO
       );
       total += tarefas.length;
