@@ -7,20 +7,33 @@
 export class Assert {
   static count = { pass: 0, fail: 0 };
   static errors = [];
+  static suiteAtual = null;
+  static testAtual = null;
 
   static reset() {
     Assert.count = { pass: 0, fail: 0 };
     Assert.errors = [];
+    Assert.suiteAtual = null;
+    Assert.testAtual = null;
   }
 
   static _record(pass, msg, erro = null) {
+    // Alguns testes antigos não passam mensagem. Nesse caso, usamos o nome do
+    // teste em execução (ou um texto genérico) para nunca gravar undefined.
+    const mensagem = msg ?? Assert.testAtual ?? "Verificação sem descrição";
+
     if (pass) {
       Assert.count.pass++;
-      Assert.errors.push({ msg, pass: true, erro: null });
     } else {
       Assert.count.fail++;
-      Assert.errors.push({ msg, pass: false, erro });
     }
+
+    Assert.errors.push({
+      msg: mensagem,
+      pass,
+      erro: pass ? null : erro,
+      suite: Assert.suiteAtual ?? "Geral"
+    });
   }
 
   static true(condicao, msg) {
@@ -90,7 +103,10 @@ export class Suite {
 
   async run() {
     const resultados = [];
+    Assert.suiteAtual = this.nome;
+
     for (const { nome, fn } of this.testes) {
+      Assert.testAtual = nome;
       if (this.beforeEachFn) await this.beforeEachFn();
       let erro = null;
       try {
@@ -101,6 +117,9 @@ export class Suite {
       }
       if (this.afterEachFn) await this.afterEachFn();
     }
+
+    Assert.testAtual = null;
+    Assert.suiteAtual = null;
     return resultados;
   }
 }
@@ -167,10 +186,11 @@ export function renderizarResultados(resultados, containerId = "resultados") {
     return;
   }
 
-  // Agrupa por suite (aproximação: usa o prefixo do nome do teste)
+  // Agrupa pelo nome real da suíte (registrado no momento da verificação).
+  // O fallback mantém compatibilidade com resultados antigos sem "suite".
   const porSuite = {};
-  for (const { msg, pass, erro } of resultados.detalhes) {
-    const suiteNome = msg.split(" ")[0] || "Geral";
+  for (const { msg, pass, erro, suite } of resultados.detalhes) {
+    const suiteNome = suite || (msg ? msg.split(" ")[0] : "Geral");
     if (!porSuite[suiteNome]) porSuite[suiteNome] = [];
     porSuite[suiteNome].push({ msg, pass, erro });
   }
