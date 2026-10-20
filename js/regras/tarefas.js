@@ -25,7 +25,7 @@ export function criarTarefa(campos) {
     data: "",
     horaInicio: "",
     duracaoMinutos: 0,
-    recorrencia: null, // sem repetição, por enquanto
+    recorrencia: null, // sem repetição por padrão; o formulário pode enviar uma regra
     metaId: null,
     excecoes: {}, // ajustes por ocorrência (fase das recorrências)
     criadaEm: agora,
@@ -44,6 +44,12 @@ function aplicarCampos(tarefa, campos) {
   tarefa.data = campos.data; // "AAAA-MM-DD"
   tarefa.horaInicio = campos.horaInicio; // "HH:MM"
   tarefa.duracaoMinutos = campos.duracaoMinutos;
+
+  // Só mexe na recorrência quando o campo foi enviado. Assim, uma edição
+  // antiga que não conhece o campo não apaga a série sem querer.
+  if ("recorrencia" in campos) {
+    tarefa.recorrencia = campos.recorrencia ?? null;
+  }
 }
 
 // Devolve as tarefas (definições) cuja data inicial é o dia informado.

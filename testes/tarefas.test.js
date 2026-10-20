@@ -51,6 +51,82 @@ describe("tarefas", (suite) => {
     Assert.equals(t.descricao, null, "descrição vazia -> null");
   });
 
+  suite.test("criarTarefa salva a regra de recorrência enviada", (Assert) => {
+    const regra = {
+      tipo: "semanal",
+      intervalo: 2,
+      fim: { tipo: "apos", quantidade: 5 }
+    };
+    const t = criarTarefa({
+      titulo: "Série",
+      descricao: "",
+      categoria: "X",
+      prioridade: "media",
+      data: "2026-10-18",
+      horaInicio: "09:00",
+      duracaoMinutos: 30,
+      recorrencia: regra
+    });
+
+    Assert.deepEquals(t.recorrencia, regra, "regra guardada na tarefa");
+  });
+
+  suite.test("atualizarTarefa troca a recorrência quando o campo é enviado", (Assert) => {
+    const t = criarTarefa({ titulo: "X", descricao: "", categoria: "X", prioridade: "media", data: "2026-10-18", horaInicio: "10:00", duracaoMinutos: 30 });
+    estado.tarefas.push(t);
+
+    const novaRegra = { tipo: "diaria", intervalo: 1, fim: { tipo: "nunca" } };
+    atualizarTarefa(estado, t.id, {
+      titulo: "X",
+      descricao: "",
+      categoria: "X",
+      prioridade: "media",
+      data: "2026-10-18",
+      horaInicio: "10:00",
+      duracaoMinutos: 30,
+      recorrencia: novaRegra
+    });
+
+    Assert.deepEquals(t.recorrencia, novaRegra, "nova regra aplicada");
+  });
+
+  suite.test("atualizarTarefa sem o campo não apaga a recorrência", (Assert) => {
+    const regra = { tipo: "diaria", intervalo: 1, fim: { tipo: "nunca" } };
+    const t = criarTarefa({ titulo: "X", descricao: "", categoria: "X", prioridade: "media", data: "2026-10-18", horaInicio: "10:00", duracaoMinutos: 30, recorrencia: regra });
+    estado.tarefas.push(t);
+
+    atualizarTarefa(estado, t.id, {
+      titulo: "Novo título",
+      descricao: "",
+      categoria: "X",
+      prioridade: "media",
+      data: "2026-10-18",
+      horaInicio: "10:00",
+      duracaoMinutos: 30
+    });
+
+    Assert.deepEquals(t.recorrencia, regra, "regra preservada");
+  });
+
+  suite.test("atualizarTarefa com recorrencia null volta a ser tarefa única", (Assert) => {
+    const regra = { tipo: "diaria", intervalo: 1, fim: { tipo: "nunca" } };
+    const t = criarTarefa({ titulo: "X", descricao: "", categoria: "X", prioridade: "media", data: "2026-10-18", horaInicio: "10:00", duracaoMinutos: 30, recorrencia: regra });
+    estado.tarefas.push(t);
+
+    atualizarTarefa(estado, t.id, {
+      titulo: "X",
+      descricao: "",
+      categoria: "X",
+      prioridade: "media",
+      data: "2026-10-18",
+      horaInicio: "10:00",
+      duracaoMinutos: 30,
+      recorrencia: null
+    });
+
+    Assert.equals(t.recorrencia, null, "regra removida");
+  });
+
   // --- tarefasDoDia ---
   suite.test("tarefasDoDia filtra por data", (Assert) => {
     estado.tarefas.push(criarTarefa({ titulo: "A", descricao: "", categoria: "X", prioridade: "media", data: "2026-10-18", horaInicio: "09:00", duracaoMinutos: 30 }));

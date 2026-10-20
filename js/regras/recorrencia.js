@@ -30,6 +30,71 @@ export function ehRecorrente(tarefa) {
   return Boolean(tarefa?.recorrencia);
 }
 
+// Valida uma regra vinda do formulário.
+// Devolve uma lista de mensagens em português; lista vazia = regra válida.
+// A validação é separada do cálculo: o formulário bloqueia dados incoerentes,
+// mas o núcleo continua tolerante a dados antigos (normalizando o que dá).
+export function validarRecorrencia(recorrencia, dataInicialISO = null) {
+  const erros = [];
+
+  if (recorrencia === null || recorrencia === undefined) {
+    return erros; // "não repete" é uma escolha válida
+  }
+
+  if (!TIPOS_VALIDOS.includes(recorrencia.tipo)) {
+    erros.push("Escolha um tipo de repetição válido.");
+    return erros; // sem tipo, os outros campos não fazem sentido
+  }
+
+  if (recorrencia.tipo === "diasDaSemana") {
+    const dias = recorrencia.diasDaSemana;
+
+    if (!Array.isArray(dias) || dias.length === 0) {
+      erros.push("Escolha pelo menos um dia da semana para a repetição.");
+    } else {
+      const diasNumeros = dias.map(Number);
+      const temDiaInvalido = diasNumeros.some(
+        (dia) => !Number.isInteger(dia) || dia < 0 || dia > 6
+      );
+      if (temDiaInvalido) {
+        erros.push("Os dias da semana devem estar entre domingo e sábado.");
+      }
+    }
+  } else {
+    // Nos demais tipos, o intervalo precisa ser um inteiro positivo.
+    // O limite de 365 é uma proteção da interface, não uma regra do modelo.
+    const intervalo = Number(recorrencia.intervalo ?? 1);
+    if (!Number.isInteger(intervalo) || intervalo < 1 || intervalo > 365) {
+      erros.push("O intervalo da repetição deve ser um número inteiro entre 1 e 365.");
+    }
+  }
+
+  const fim = recorrencia.fim;
+
+  if (!fim || !["nunca", "emData", "apos"].includes(fim.tipo)) {
+    erros.push("Escolha como a repetição termina.");
+    return erros;
+  }
+
+  if (fim.tipo === "emData") {
+    if (typeof fim.data !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(fim.data)) {
+      erros.push("Informe a data final da repetição.");
+    } else if (dataInicialISO && fim.data < dataInicialISO) {
+      erros.push("A data final da repetição não pode ser anterior à data inicial.");
+    }
+  }
+
+  if (fim.tipo === "apos") {
+    // 999 é um limite de segurança da interface, não uma regra do modelo.
+    const quantidade = Number(fim.quantidade);
+    if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > 999) {
+      erros.push("A repetição deve ter entre 1 e 999 ocorrências.");
+    }
+  }
+
+  return erros;
+}
+
 // A ocorrência daquela data foi cancelada por uma exceção?
 export function ocorrenciaCancelada(tarefa, dataISO) {
   return tarefa?.excecoes?.[dataISO]?.cancelada === true;

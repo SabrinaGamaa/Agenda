@@ -7,7 +7,8 @@ import {
   ehRecorrente,
   ocorrenciaCancelada,
   ocorrenciasNoPeriodo,
-  tarefaOcorreEm
+  tarefaOcorreEm,
+  validarRecorrencia
 } from "../js/regras/recorrencia.js";
 
 // Cria uma tarefa mínima só com os campos que a recorrência usa.
@@ -300,6 +301,96 @@ describe("recorrencia", (suite) => {
       ocorrenciasNoPeriodo(criarTarefa("2026-10-18"), "2026-10-31", "2026-10-01"),
       [],
       "janela invertida"
+    );
+  });
+
+  // --- validarRecorrencia (usada pelo formulário) ---
+
+  suite.test("validação aceita as combinações válidas", (Assert) => {
+    Assert.length(validarRecorrencia(null), 0, "sem repetição é válido");
+    Assert.length(validarRecorrencia(regra("diaria")), 0, "diária padrão");
+    Assert.length(
+      validarRecorrencia(
+        regra("semanal", { intervalo: 2, fim: { tipo: "emData", data: "2026-12-31" } }),
+        "2026-10-18"
+      ),
+      0,
+      "semanal com intervalo e fim em data"
+    );
+    Assert.length(
+      validarRecorrencia(regra("diasDaSemana", { diasDaSemana: [0, 2, 6] })),
+      0,
+      "dias da semana válidos"
+    );
+    Assert.length(
+      validarRecorrencia(regra("mensal", { fim: { tipo: "apos", quantidade: 12 } })),
+      0,
+      "mensal com fim após N"
+    );
+    Assert.length(
+      validarRecorrencia(
+        regra("diaria", { fim: { tipo: "emData", data: "2026-10-18" } }),
+        "2026-10-18"
+      ),
+      0,
+      "fim igual à data inicial vale (uma ocorrência)"
+    );
+  });
+
+  suite.test("validação aponta tipo, intervalo e dias inválidos", (Assert) => {
+    Assert.length(
+      validarRecorrencia({ intervalo: 1, fim: { tipo: "nunca" } }),
+      1,
+      "tipo ausente"
+    );
+    Assert.length(validarRecorrencia(regra("diaria", { intervalo: 0 })), 1, "intervalo zero");
+    Assert.length(validarRecorrencia(regra("semanal", { intervalo: 1.5 })), 1, "intervalo fracionado");
+    Assert.length(validarRecorrencia(regra("mensal", { intervalo: 366 })), 1, "intervalo acima do limite");
+    Assert.length(
+      validarRecorrencia(regra("diasDaSemana", { diasDaSemana: [] })),
+      1,
+      "nenhum dia escolhido"
+    );
+    Assert.length(
+      validarRecorrencia(regra("diasDaSemana", { diasDaSemana: [7] })),
+      1,
+      "dia fora de 0..6"
+    );
+    Assert.length(
+      validarRecorrencia(regra("diasDaSemana", { diasDaSemana: "1,3" })),
+      1,
+      "dias que não são lista"
+    );
+  });
+
+  suite.test("validação aponta fim ausente, invertido ou fora do limite", (Assert) => {
+    Assert.length(
+      validarRecorrencia(regra("diaria", { fim: { tipo: "emData" } })),
+      1,
+      "data final ausente"
+    );
+    Assert.length(
+      validarRecorrencia(
+        regra("diaria", { fim: { tipo: "emData", data: "2026-10-17" } }),
+        "2026-10-18"
+      ),
+      1,
+      "data final antes do início"
+    );
+    Assert.length(
+      validarRecorrencia(regra("diaria", { fim: { tipo: "apos", quantidade: 0 } })),
+      1,
+      "zero ocorrências"
+    );
+    Assert.length(
+      validarRecorrencia(regra("diaria", { fim: { tipo: "apos", quantidade: 1000 } })),
+      1,
+      "acima do limite de ocorrências"
+    );
+    Assert.length(
+      validarRecorrencia(regra("diaria", { fim: { tipo: "outro" } })),
+      1,
+      "tipo de fim desconhecido"
     );
   });
 });
