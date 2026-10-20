@@ -74,14 +74,66 @@ describe("armazenamento", (suite) => {
     Assert.deepEquals(estado.config.categoriasFinancas, ["Moradia", "Alimentação", "Transporte", "Saúde", "Lazer", "Outros"]);
   });
 
-  suite.test("salvar aceita estado com arrays vazios", (Assert) => {
+  suite.test("carregar restaura categorias quando o estado salvo está vazio", (Assert) => {
     const vazio = {
       schemaVersion: 1,
       config: { categoriasTarefas: [], categoriasFinancas: [] },
       tarefas: [], metas: [], lancamentos: [], contasFixas: [], pagamentos: []
     };
     Assert.notThrows(() => salvar(vazio), "salva sem erro");
+
     const carregado = carregar();
-    Assert.equals(carregado.tarefas.length, 0);
+    Assert.equals(carregado.tarefas.length, 0, "preserva a lista de tarefas vazia");
+    Assert.deepEquals(
+      carregado.config.categoriasTarefas,
+      ["Trabalho", "Pessoal", "Estudos", "Saúde"],
+      "restaura as categorias de tarefas"
+    );
+    Assert.deepEquals(
+      carregado.config.categoriasFinancas,
+      ["Moradia", "Alimentação", "Transporte", "Saúde", "Lazer", "Outros"],
+      "restaura as categorias de finanças"
+    );
+
+    const persistido = JSON.parse(localStorage.getItem(CHAVE));
+    Assert.deepEquals(
+      persistido.config.categoriasTarefas,
+      ["Trabalho", "Pessoal", "Estudos", "Saúde"],
+      "salva a correção no localStorage"
+    );
+  });
+
+  suite.test("carregar preserva categorias personalizadas", (Assert) => {
+    const personalizado = {
+      schemaVersion: 1,
+      config: { categoriasTarefas: ["Minha categoria"], categoriasFinancas: ["Minha conta"] },
+      tarefas: [], metas: [], lancamentos: [], contasFixas: [], pagamentos: []
+    };
+    salvar(personalizado);
+
+    const carregado = carregar();
+    Assert.deepEquals(carregado.config.categoriasTarefas, ["Minha categoria"]);
+    Assert.deepEquals(carregado.config.categoriasFinancas, ["Minha conta"]);
+  });
+
+  suite.test("carregar cria configuração quando o estado salvo não tem config", (Assert) => {
+    const semConfig = {
+      schemaVersion: 1,
+      tarefas: [], metas: [], lancamentos: [], contasFixas: [], pagamentos: []
+    };
+    salvar(semConfig);
+
+    const carregado = carregar();
+    Assert.true(!!carregado.config, "config foi criada");
+    Assert.deepEquals(
+      carregado.config.categoriasTarefas,
+      ["Trabalho", "Pessoal", "Estudos", "Saúde"],
+      "cria as categorias de tarefas"
+    );
+    Assert.deepEquals(
+      carregado.config.categoriasFinancas,
+      ["Moradia", "Alimentação", "Transporte", "Saúde", "Lazer", "Outros"],
+      "cria as categorias de finanças"
+    );
   });
 });
