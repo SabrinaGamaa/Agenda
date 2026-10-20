@@ -12,7 +12,7 @@ import {
   atualizarTarefa,
   excluirTarefa
 } from "../regras/tarefas.js";
-import { ehRecorrente } from "../regras/recorrencia.js";
+import { ehRecorrente, tarefaOcorreEm } from "../regras/recorrencia.js";
 import { criarFormularioTarefa } from "../componentes/formulario-tarefa.js";
 import { abrirModal } from "../componentes/modal.js";
 import { criarBarraFiltros } from "../componentes/barra-filtros.js";
@@ -58,11 +58,20 @@ function criarCartaoDeNovaTarefa(estado) {
       salvar(estado);
       console.log("Tarefa criada:", tarefa);
 
-      // Se a tarefa não for do dia que está na tela, avisamos por que ela não aparece.
-      const mensagem =
-        tarefa.data === dataVisualizada
-          ? "Tarefa adicionada!"
-          : `Tarefa salva para ${formatarData(tarefa.data)} — navegue até esse dia para vê-la.`;
+      // Se a tarefa não aparecer no dia que está na tela, avisamos por quê.
+      // Numa série, o início pode ser outro dia e ainda assim haver ocorrência hoje.
+      const apareceNaTela = tarefaOcorreEm(tarefa, dataVisualizada);
+      const tipo = ehRecorrente(tarefa) ? "Série" : "Tarefa";
+      let mensagem;
+
+      if (apareceNaTela) {
+        mensagem = `${tipo} adicionada!`;
+      } else if (ehRecorrente(tarefa)) {
+        mensagem = "Série salva! Navegue pelos dias para ver as ocorrências.";
+      } else {
+        mensagem = `Tarefa salva para ${formatarData(tarefa.data)} — navegue até esse dia para vê-la.`;
+      }
+
       desenharTarefasDoDia(estado, mensagem);
     }
   });

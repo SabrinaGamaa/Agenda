@@ -17,9 +17,9 @@ function tarefaExemplo(titulo, descricao, categoria, prioridade, horaInicio, dur
     data: hojeISO(),
     horaInicio, // "HH:MM"
     duracaoMinutos,
-    recorrencia: null, // sem repetição, por enquanto
+    recorrencia: null, // as tarefas de exemplo são únicas
     metaId: null,
-    excecoes: {}, // ajustes de ocorrência (fase das recorrências)
+    excecoes: {}, // ajustes por ocorrência (usado pelas séries recorrentes)
     criadaEm: agora,
     atualizadaEm: agora
   };

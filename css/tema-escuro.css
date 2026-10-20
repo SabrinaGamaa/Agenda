@@ -346,6 +346,100 @@ a:hover { text-decoration: underline; }
   border: 1px solid rgba(139,42,42,.2);
 }
 
+/* O atributo hidden precisa vencer o display:flex de .campo. */
+.formulario-tarefa [hidden] { display: none !important; }
+
+/* --- Bloco de repetição --- */
+.recorrencia {
+  min-width: 0;
+  margin: 0;
+  padding: var(--espaco-pequeno) var(--espaco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  background: rgba(255,255,255,.02);
+}
+
+.recorrencia-legenda {
+  padding: 0 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.recorrencia-grade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-pequeno);
+}
+
+.recorrencia-linha {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recorrencia-linha input[type="number"] { width: 90px; }
+
+.recorrencia-unidade {
+  font-size: 0.85rem;
+  color: var(--texto-suave);
+  white-space: nowrap;
+}
+
+.recorrencia-dias {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.recorrencia-dia {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  background: var(--bg-input);
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease;
+}
+
+.recorrencia-dia:hover {
+  border-color: var(--borda-forte);
+  color: var(--texto);
+}
+
+.recorrencia-dia input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  flex: none;
+  accent-color: var(--acento);
+}
+
+.recorrencia-dia input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.recorrencia-ajuda,
+.recorrencia-resumo {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.recorrencia-ajuda { color: var(--texto-fraco); }
+.recorrencia-resumo { color: var(--texto-suave); }
+
 .mensagem-sucesso {
   margin: 0 0 var(--espaco);
   padding: 10px 12px;
@@ -358,6 +452,7 @@ a:hover { text-decoration: underline; }
 
 @media (max-width: 560px) {
   .formulario-tarefa { grid-template-columns: 1fr; }
+  .recorrencia-grade { grid-template-columns: 1fr; }
 }
 
 /* ==========================================================================
@@ -368,6 +463,8 @@ a:hover { text-decoration: underline; }
   border-radius: var(--raio);
   padding: calc(var(--espaco) * 1.25);
   width: min(520px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
   background: var(--bg-elevado);
   color: var(--texto);
   box-shadow: var(--sombra-forte);

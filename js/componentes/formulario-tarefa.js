@@ -2,7 +2,20 @@
 // É usado para criar (dentro do cartão "Nova tarefa") e para editar
 // (dentro de uma janela modal), graças às opções que recebe.
 
-import { hojeISO, somarMinutos } from "../regras/datas.js";
+import { hojeISO, somarMinutos, diaDaSemana, formatarData } from "../regras/datas.js";
+import { validarRecorrencia } from "../regras/recorrencia.js";
+
+// Rótulos dos dias da semana. O número segue o modelo de dados:
+// 0 = domingo ... 6 = sábado (o mesmo de Date.getDay()).
+const DIAS_DA_SEMANA = [
+  { valor: 0, curto: "Dom", nome: "dom" },
+  { valor: 1, curto: "Seg", nome: "seg" },
+  { valor: 2, curto: "Ter", nome: "ter" },
+  { valor: 3, curto: "Qua", nome: "qua" },
+  { valor: 4, curto: "Qui", nome: "qui" },
+  { valor: 5, curto: "Sex", nome: "sex" },
+  { valor: 6, curto: "Sáb", nome: "sáb" }
+];
 
 export function criarFormularioTarefa({
   categorias,
@@ -16,7 +29,7 @@ export function criarFormularioTarefa({
   formulario.className = "formulario-tarefa";
   formulario.noValidate = true; // validação nativa desligada: usamos mensagens nossas, em português
 
-  // --- Campos do formulário ---
+  // --- Campos básicos ---
 
   const titulo = document.createElement("input");
   titulo.type = "text";
@@ -60,7 +73,87 @@ export function criarFormularioTarefa({
   duracaoMinutos.max = "1440";
   duracaoMinutos.step = "5";
 
-  // Valores: modo edição (tarefa existente) ou padrões do modo criação.
+  // --- Campos de recorrência ---
+
+  const repeticao = document.createElement("select");
+  for (const { valor, rotulo } of [
+    { valor: "", rotulo: "Não repete" },
+    { valor: "diaria", rotulo: "Todos os dias" },
+    { valor: "semanal", rotulo: "Toda semana" },
+    { valor: "diasDaSemana", rotulo: "Dias da semana" },
+    { valor: "mensal", rotulo: "Todo mês" }
+  ]) {
+    const opcao = document.createElement("option");
+    opcao.value = valor;
+    opcao.textContent = rotulo;
+    repeticao.appendChild(opcao);
+  }
+
+  const intervalo = document.createElement("input");
+  intervalo.type = "number";
+  intervalo.min = "1";
+  intervalo.max = "365";
+  intervalo.step = "1";
+  intervalo.value = "1";
+
+  // Texto ao lado do intervalo: "dia(s)", "semana(s)" ou "mês(es)".
+  // Ele muda conforme o tipo escolhido.
+  const intervaloUnidade = document.createElement("span");
+  intervaloUnidade.className = "recorrencia-unidade";
+  intervaloUnidade.textContent = "dia";
+
+  const linhaIntervalo = document.createElement("div");
+  linhaIntervalo.className = "recorrencia-linha";
+  linhaIntervalo.appendChild(intervalo);
+  linhaIntervalo.appendChild(intervaloUnidade);
+
+  // Cada dia é um <label> com um checkbox. O Map guarda o input pelo número
+  // do dia para facilitar marcar/ler os valores selecionados.
+  const caixaDias = document.createElement("div");
+  caixaDias.className = "recorrencia-dias";
+  const checkboxesDias = new Map();
+
+  for (const { valor, curto } of DIAS_DA_SEMANA) {
+    const etiqueta = document.createElement("label");
+    etiqueta.className = "recorrencia-dia";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.value = String(valor);
+
+    const texto = document.createElement("span");
+    texto.textContent = curto;
+
+    etiqueta.appendChild(checkbox);
+    etiqueta.appendChild(texto);
+    caixaDias.appendChild(etiqueta);
+    checkboxesDias.set(valor, checkbox);
+  }
+
+  const fimTipo = document.createElement("select");
+  for (const { valor, rotulo } of [
+    { valor: "nunca", rotulo: "Nunca" },
+    { valor: "emData", rotulo: "Em uma data" },
+    { valor: "apos", rotulo: "Após N ocorrências" }
+  ]) {
+    const opcao = document.createElement("option");
+    opcao.value = valor;
+    opcao.textContent = rotulo;
+    fimTipo.appendChild(opcao);
+  }
+
+  const fimData = document.createElement("input");
+  fimData.type = "date";
+
+  const fimQuantidade = document.createElement("input");
+  fimQuantidade.type = "number";
+  fimQuantidade.min = "1";
+  fimQuantidade.max = "999";
+  fimQuantidade.step = "1";
+  fimQuantidade.value = "10";
+
+  // --- Valores: modo edição (tarefa existente) ou padrões do modo criação ---
+
   if (valoresIniciais) {
     titulo.value = valoresIniciais.titulo ?? "";
     descricao.value = valoresIniciais.descricao ?? "";
@@ -76,6 +169,76 @@ export function criarFormularioTarefa({
     data.value = dataPadrao ?? hojeISO();
     duracaoMinutos.value = "30";
   }
+
+  // Preenche a recorrência existente. Se a tarefa é única, os controles
+  // começam em "Não repete", "Nunca" e intervalo 1.
+  const recorrenciaInicial = valoresIniciais?.recorrencia ?? null;
+
+  if (recorrenciaInicial) {
+    const tiposDeRepeticao = ["diaria", "semanal", "diasDaSemana", "mensal"];
+    repeticao.value = tiposDeRepeticao.includes(recorrenciaInicial.tipo)
+      ? recorrenciaInicial.tipo
+      : "";
+
+    intervalo.value = String(recorrenciaInicial.intervalo ?? 1);
+
+    for (const dia of recorrenciaInicial.diasDaSemana ?? []) {
+      const checkbox = checkboxesDias.get(Number(dia));
+      if (checkbox) checkbox.checked = true;
+    }
+
+    const fim = recorrenciaInicial.fim ?? { tipo: "nunca" };
+    fimTipo.value = ["nunca", "emData", "apos"].includes(fim.tipo) ? fim.tipo : "nunca";
+
+    if (fimTipo.value === "emData" && fim.data) {
+      fimData.value = fim.data;
+    }
+    if (fimTipo.value === "apos" && fim.quantidade != null) {
+      fimQuantidade.value = String(fim.quantidade);
+    }
+  } else {
+    repeticao.value = "";
+    intervalo.value = "1";
+    fimTipo.value = "nunca";
+    fimQuantidade.value = "10";
+  }
+
+  // --- Bloco visual de recorrência ---
+
+  const campoIntervalo = criarCampo("Intervalo", linhaIntervalo);
+  const campoDias = criarGrupo("Dias da semana", caixaDias, true);
+  const campoFimTipo = criarCampo("Termina", fimTipo);
+  const campoFimData = criarCampo("Data final", fimData);
+  const campoFimQuantidade = criarCampo("Nº de ocorrências", fimQuantidade);
+
+  const gradeRecorrencia = document.createElement("div");
+  gradeRecorrencia.className = "recorrencia-grade";
+  gradeRecorrencia.appendChild(criarCampo("Frequência", repeticao));
+  gradeRecorrencia.appendChild(campoIntervalo);
+  gradeRecorrencia.appendChild(campoDias);
+  gradeRecorrencia.appendChild(campoFimTipo);
+  gradeRecorrencia.appendChild(campoFimData);
+  gradeRecorrencia.appendChild(campoFimQuantidade);
+
+  const ajudaRecorrencia = document.createElement("p");
+  ajudaRecorrencia.className = "recorrencia-ajuda";
+  ajudaRecorrencia.hidden = true;
+
+  const resumoRecorrencia = document.createElement("p");
+  resumoRecorrencia.className = "recorrencia-resumo";
+  resumoRecorrencia.hidden = true;
+
+  const blocoRecorrencia = document.createElement("fieldset");
+  blocoRecorrencia.className = "recorrencia campo-largo";
+
+  const legenda = document.createElement("legend");
+  legenda.className = "recorrencia-legenda";
+  legenda.textContent = "Repetição";
+
+  blocoRecorrencia.appendChild(legenda);
+  blocoRecorrencia.appendChild(gradeRecorrencia);
+  blocoRecorrencia.appendChild(ajudaRecorrencia);
+  blocoRecorrencia.appendChild(resumoRecorrencia);
 
   // --- Mensagens (prévia do horário final, aviso e erros) ---
 
@@ -119,6 +282,7 @@ export function criarFormularioTarefa({
   formulario.appendChild(criarCampo("Data", data));
   formulario.appendChild(criarCampo("Horário de início *", horaInicio));
   formulario.appendChild(criarCampo("Duração (minutos) *", duracaoMinutos));
+  formulario.appendChild(blocoRecorrencia);
   formulario.appendChild(previa);
   formulario.appendChild(aviso);
   formulario.appendChild(erro);
@@ -148,9 +312,184 @@ export function criarFormularioTarefa({
     }
   }
 
+  // Devolve true se pelo menos um dia da semana está marcado.
+  function algumDiaMarcado() {
+    return [...checkboxesDias.values()].some((checkbox) => checkbox.checked);
+  }
+
+  // "seg, qua e sex" (vírgulas e "e" antes do último item).
+  function formatarLista(itens) {
+    if (itens.length === 1) return itens[0];
+    return `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`;
+  }
+
+  // Mostra ou esconde os campos que dependem do tipo de repetição e do fim.
+  function atualizarVisibilidade() {
+    const tipo = repeticao.value;
+    const repete = tipo !== "";
+    const usaIntervalo = tipo === "diaria" || tipo === "semanal" || tipo === "mensal";
+    const usaDias = tipo === "diasDaSemana";
+
+    campoIntervalo.hidden = !usaIntervalo;
+    campoDias.hidden = !usaDias;
+    campoFimTipo.hidden = !repete;
+    campoFimData.hidden = !repete || fimTipo.value !== "emData";
+    campoFimQuantidade.hidden = !repete || fimTipo.value !== "apos";
+
+    // Unidade do intervalo no singular ou plural.
+    const unidades = {
+      diaria: ["dia", "dias"],
+      semanal: ["semana", "semanas"],
+      mensal: ["mês", "meses"]
+    };
+    const [singular, plural] = unidades[tipo] ?? ["dia", "dias"];
+    intervaloUnidade.textContent = Number(intervalo.value) === 1 ? singular : plural;
+
+    // Ao escolher "Dias da semana", se nada estiver marcado, começamos pelo
+    // dia da semana da data inicial. O usuário pode trocar em seguida.
+    if (usaDias && !algumDiaMarcado()) {
+      const dia = diaDaSemana(data.value || hojeISO());
+      const checkbox = checkboxesDias.get(dia);
+      if (checkbox) checkbox.checked = true;
+    }
+
+    // O seletor de data final não deve oferecer datas anteriores ao início.
+    if (data.value) {
+      fimData.min = data.value;
+    } else {
+      fimData.removeAttribute("min");
+    }
+
+    if (!repete) {
+      ajudaRecorrencia.hidden = true;
+    } else {
+      ajudaRecorrencia.hidden = false;
+      if (tipo === "diasDaSemana") {
+        ajudaRecorrencia.textContent =
+          "A série repete todas as semanas nos dias marcados. A primeira ocorrência é a data inicial ou o próximo dia marcado.";
+      } else if (tipo === "mensal") {
+        ajudaRecorrencia.textContent =
+          "Se o dia não existir no mês, usamos o último dia (ex.: 31 vira 28 ou 29 em fevereiro).";
+      } else {
+        ajudaRecorrencia.textContent =
+          "A série começa na data da tarefa e segue a partir dela.";
+      }
+    }
+
+    atualizarResumo();
+  }
+
+  // Monta a frase de resumo que ajuda a conferir a regra antes de salvar.
+  function atualizarResumo() {
+    const tipo = repeticao.value;
+
+    if (tipo === "") {
+      resumoRecorrencia.hidden = true;
+      resumoRecorrencia.textContent = "";
+      return;
+    }
+
+    resumoRecorrencia.hidden = false;
+
+    const valorIntervalo = Number(intervalo.value);
+    const intervaloValido =
+      Number.isInteger(valorIntervalo) && valorIntervalo >= 1 && valorIntervalo <= 365;
+    const quantidade = intervaloValido ? valorIntervalo : 1;
+    let texto;
+
+    if (tipo === "diaria") {
+      texto = !intervaloValido
+        ? "Intervalo de repetição inválido"
+        : quantidade === 1
+          ? "Repete todos os dias"
+          : `Repete a cada ${quantidade} dias`;
+    } else if (tipo === "semanal") {
+      texto = !intervaloValido
+        ? "Intervalo de repetição inválido"
+        : quantidade === 1
+          ? "Repete toda semana"
+          : `Repete a cada ${quantidade} semanas`;
+    } else if (tipo === "mensal") {
+      const base = !intervaloValido
+        ? "Intervalo de repetição inválido"
+        : quantidade === 1
+          ? "Repete todo mês"
+          : `Repete a cada ${quantidade} meses`;
+      const diaDoMes = data.value.split("-")[2];
+      texto = intervaloValido && diaDoMes ? `${base} no dia ${Number(diaDoMes)}` : base;
+    } else if (tipo === "diasDaSemana") {
+      const nomes = DIAS_DA_SEMANA
+        .filter(({ valor }) => checkboxesDias.get(valor).checked)
+        .map(({ nome }) => nome);
+      texto = nomes.length > 0
+        ? `Repete toda semana: ${formatarLista(nomes)}`
+        : "Repete toda semana (escolha os dias)";
+    } else {
+      texto = "Repetição";
+    }
+
+    let fimTexto;
+    if (fimTipo.value === "emData") {
+      fimTexto = fimData.value
+        ? `até ${formatarData(fimData.value)}`
+        : "até uma data a definir";
+    } else if (fimTipo.value === "apos") {
+      const qtd = Number(fimQuantidade.value);
+      fimTexto = Number.isInteger(qtd) && qtd >= 1 && qtd <= 999
+        ? `por ${qtd} ${qtd === 1 ? "ocorrência" : "ocorrências"}`
+        : "por um número de ocorrências a definir";
+    } else {
+      fimTexto = "sem data final";
+    }
+
+    resumoRecorrencia.textContent = `${texto}, ${fimTexto}.`;
+  }
+
+  // Monta o objeto salvo em tarefa.recorrencia (ou null quando não repete).
+  function montarRecorrencia() {
+    const tipo = repeticao.value;
+    if (tipo === "") return null;
+
+    const recorrencia = {
+      tipo,
+      // Em "diasDaSemana" o intervalo não é usado; guardamos 1 para manter
+      // o mesmo formato do modelo de dados.
+      intervalo: tipo === "diasDaSemana" ? 1 : Number(intervalo.value)
+    };
+
+    if (tipo === "diasDaSemana") {
+      recorrencia.diasDaSemana = DIAS_DA_SEMANA
+        .filter(({ valor }) => checkboxesDias.get(valor).checked)
+        .map(({ valor }) => valor);
+    }
+
+    const fim = { tipo: fimTipo.value };
+    if (fim.tipo === "emData") {
+      fim.data = fimData.value;
+    } else if (fim.tipo === "apos") {
+      fim.quantidade = Number(fimQuantidade.value);
+    }
+    recorrencia.fim = fim;
+
+    return recorrencia;
+  }
+
   horaInicio.addEventListener("input", atualizarPrevia);
   duracaoMinutos.addEventListener("input", atualizarPrevia);
+
+  repeticao.addEventListener("change", atualizarVisibilidade);
+  intervalo.addEventListener("input", atualizarVisibilidade);
+  fimTipo.addEventListener("change", atualizarVisibilidade);
+  fimData.addEventListener("input", atualizarResumo);
+  fimQuantidade.addEventListener("input", atualizarResumo);
+  data.addEventListener("input", atualizarVisibilidade);
+
+  for (const checkbox of checkboxesDias.values()) {
+    checkbox.addEventListener("change", atualizarResumo);
+  }
+
   atualizarPrevia();
+  atualizarVisibilidade();
 
   formulario.addEventListener("submit", (evento) => {
     evento.preventDefault();
@@ -162,10 +501,15 @@ export function criarFormularioTarefa({
       prioridade: prioridade.value,
       data: data.value,
       horaInicio: horaInicio.value,
-      duracaoMinutos: Number(duracaoMinutos.value)
+      duracaoMinutos: Number(duracaoMinutos.value),
+      recorrencia: montarRecorrencia()
     };
 
     const mensagensDeErro = validar(campos);
+    if (campos.recorrencia) {
+      mensagensDeErro.push(...validarRecorrencia(campos.recorrencia, campos.data));
+    }
+
     if (mensagensDeErro.length > 0) {
       erro.textContent = mensagensDeErro.join(" ");
       erro.hidden = false;
@@ -210,5 +554,20 @@ function criarCampo(rotulo, entrada, largo = false) {
 
   grupo.appendChild(texto);
   grupo.appendChild(entrada);
+  return grupo;
+}
+
+// Cria um grupo com rótulo, mas sem <label> envolvendo o conteúdo.
+// É usado nos checkboxes, onde cada dia já tem seu próprio <label>.
+function criarGrupo(rotulo, conteudo, largo = false) {
+  const grupo = document.createElement("div");
+  grupo.className = largo ? "campo campo-largo" : "campo";
+
+  const texto = document.createElement("span");
+  texto.className = "campo-rotulo";
+  texto.textContent = rotulo;
+
+  grupo.appendChild(texto);
+  grupo.appendChild(conteudo);
   return grupo;
 }
