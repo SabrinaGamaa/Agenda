@@ -109,6 +109,41 @@ export function calcularProgresso(meta) {
   return limitarPercentual(meta.progressoManual ?? 0);
 }
 
+// Valida os campos de uma meta antes de salvar.
+// Devolve uma lista de mensagens em português; lista vazia = tudo certo.
+export function validarMeta(campos = {}) {
+  const erros = [];
+
+  if (String(campos.titulo ?? "").trim() === "") {
+    erros.push("Informe o título da meta.");
+  }
+
+  if (
+    campos.progressoManual !== undefined &&
+    campos.progressoManual !== null &&
+    campos.progressoManual !== ""
+  ) {
+    const progresso = Number(campos.progressoManual);
+    if (!Number.isInteger(progresso) || progresso < 0 || progresso > 100) {
+      erros.push("O progresso deve ser um número inteiro entre 0 e 100.");
+    }
+  }
+
+  if (campos.tipo === "financeira") {
+    const alvo = Number(campos.valorAlvoCentavos);
+    if (!Number.isFinite(alvo) || alvo <= 0) {
+      erros.push("Informe um valor alvo maior que zero.");
+    }
+
+    const atual = Number(campos.valorAtualCentavos ?? 0);
+    if (!Number.isFinite(atual) || atual < 0) {
+      erros.push("O valor atual não pode ser negativo.");
+    }
+  }
+
+  return erros;
+}
+
 // Resumo financeiro de uma meta financeira.
 // Devolve null quando a meta não é financeira ou não tem valor alvo definido.
 export function progressoFinanceiro(meta) {

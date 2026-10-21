@@ -2,13 +2,16 @@
 // Inicia no Home (calendário + painel lateral).
 // Clicar num dia no calendário → mostra a tela de tarefas daquele dia.
 // A tela de tarefas tem botão "Home" no cabeçalho para voltar.
+// Navegação principal: Agenda (calendário/dia) e Metas.
 // Menu no cabeçalho: Exportar / Importar / Sobre.
 
 import { carregar, salvar } from "./dados/armazenamento.js";
 import { exportarEstado, importarEstado, abrirSeletorArquivo } from "./dados/exportar-importar.js";
 import { desenharInicio, atualizarHome, marcarDiaVisualizadoNoCalendario } from "./telas/inicio.js";
 import { desenharTarefasDoDia, setDataVisualizada } from "./telas/tarefas.js";
+import { desenharMetas } from "./telas/metas.js";
 import { criarBotaoMenu } from "./componentes/botao-menu.js";
+import { criarNavegacao } from "./componentes/navegacao.js";
 
 // Estado global (carregado do localStorage)
 const estado = carregar();
@@ -16,12 +19,16 @@ const estado = carregar();
 // Expõe no window para debug no console (ex.: estado.tarefas)
 window.estado = estado;
 
-// Referência à tela atual: "inicio" | "tarefas"
+// Referência à tela atual: "inicio" | "tarefas" | "metas"
 let telaAtual = "inicio";
+
+// Navegação principal (Agenda | Metas), criada uma vez no cabeçalho.
+let navegacao = null;
 
 // Inicialização
 document.addEventListener("DOMContentLoaded", () => {
   inicializarMenu();
+  inicializarNavegacao();
   mostrarInicio();
 });
 
@@ -51,6 +58,36 @@ function inicializarMenu() {
       mostrarSobre();
     }
   });
+}
+
+/** Inicializa a navegação principal (Agenda | Metas) no cabeçalho */
+function inicializarNavegacao() {
+  const cabecalho = document.querySelector(".cabecalho");
+  if (!cabecalho) {
+    setTimeout(inicializarNavegacao, 100);
+    return;
+  }
+
+  if (cabecalho.querySelector(".navegacao-principal")) return;
+
+  navegacao = criarNavegacao({
+    abaAtual: "agenda",
+    aoMudar: (aba) => {
+      if (aba === "metas" && telaAtual !== "metas") {
+        mostrarMetas();
+      } else if (aba === "agenda" && telaAtual !== "inicio") {
+        mostrarInicio();
+      }
+    }
+  });
+
+  // Fica antes dos botões Home e Menu, que continuam à direita.
+  const menu = cabecalho.querySelector(".menu-cabecalho");
+  if (menu) {
+    cabecalho.insertBefore(navegacao, menu);
+  } else {
+    cabecalho.appendChild(navegacao);
+  }
 }
 
 /** Manipula importação de arquivo JSON */
@@ -84,7 +121,7 @@ function mostrarSobre() {
       <button class="modal-fechar" aria-label="Fechar">×</button>
     </div>
     <p class="modal-texto">
-      <strong>Versão:</strong> Fase 3 completa — agenda, recorrências e exceções<br>
+      <strong>Versão:</strong> Fase 4 em andamento — metas<br>
       <strong>Stack:</strong> HTML + CSS + JavaScript (ES Modules)<br>
       <strong>Armazenamento:</strong> localStorage<br>
       <strong>Tema:</strong> Escuro, minimalista, fonte Inter<br>
@@ -120,6 +157,14 @@ export function mostrarTarefas(dataISO) {
   telaAtual = "tarefas";
   setDataVisualizada(dataISO);
   desenharTarefasDoDia(estado);
+  fixarBotaoHome();
+  atualizarCabecalho();
+}
+
+/** Mostra a tela de metas */
+export function mostrarMetas() {
+  telaAtual = "metas";
+  desenharMetas(estado);
   fixarBotaoHome();
   atualizarCabecalho();
 }
@@ -165,6 +210,11 @@ function atualizarCabecalho() {
   // Recria o botão Home caso tenha sido removido ou perdido
   fixarBotaoHome();
 
+  // Mantém a aba correta destacada: tarefas do dia pertencem à Agenda.
+  if (navegacao) {
+    navegacao.atualizar(telaAtual === "metas" ? "metas" : "agenda");
+  }
+
   // O menu (Exportar/Importar) já fica gerenciado por inicializarMenu()
   // Não fazemos nada adicional aqui para não duplicar esforço.
 }
@@ -173,6 +223,8 @@ function atualizarCabecalho() {
 export function notificarMudanca() {
   if (telaAtual === "inicio") {
     atualizarHome(estado);
+  } else if (telaAtual === "metas") {
+    desenharMetas(estado);
   } else {
     desenharTarefasDoDia(estado);
   }

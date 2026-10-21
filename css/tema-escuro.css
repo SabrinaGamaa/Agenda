@@ -141,7 +141,7 @@ a:hover { text-decoration: underline; }
   font-weight: 400;
 }
 
-/* Botões do cabeçalho à direita: Home ⌂ e Menu ⋮ */
+/* Itens do cabeçalho: navegação Agenda|Metas, Home ⌂ e Menu ⋮ */
 .botao-home,
 .menu-cabecalho {
   position: relative;   /* âncora do tooltip e do dropdown */
@@ -152,6 +152,61 @@ a:hover { text-decoration: underline; }
   width: 40px;
   height: 40px;
   font-size: 1.2rem;
+}
+
+/* Navegação principal: Agenda | Metas */
+.navegacao-principal {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-input);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  flex-shrink: 0;
+}
+
+.navegacao-botao {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 6px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--texto-suave);
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+
+.navegacao-botao:hover {
+  color: var(--texto);
+}
+
+.navegacao-botao.ativo {
+  background: var(--acento-suave);
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.navegacao-botao:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .cabecalho {
+    flex-wrap: wrap;
+  }
+
+  .navegacao-principal {
+    order: 5;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .navegacao-botao {
+    flex: 1;
+  }
 }
 
 #conteudo {
@@ -286,6 +341,13 @@ a:hover { text-decoration: underline; }
   margin-top: var(--espaco);
 }
 
+.formulario-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-pequeno);
+  margin-top: 0;
+}
+
 .campo {
   display: flex;
   flex-direction: column;
@@ -303,7 +365,10 @@ a:hover { text-decoration: underline; }
 }
 
 .formulario-tarefa input,
-.formulario-tarefa select {
+.formulario-tarefa select,
+.formulario-meta input,
+.formulario-meta select,
+.formulario-meta textarea {
   font: inherit;
   padding: 10px 12px;
   border: 1px solid var(--borda);
@@ -313,12 +378,22 @@ a:hover { text-decoration: underline; }
   transition: border-color .15s ease, box-shadow .15s ease;
 }
 
-.formulario-tarefa input::placeholder {
+.formulario-meta textarea {
+  min-height: 84px;
+  resize: vertical;
+}
+
+.formulario-tarefa input::placeholder,
+.formulario-meta input::placeholder,
+.formulario-meta textarea::placeholder {
   color: var(--texto-fraco);
 }
 
 .formulario-tarefa input:focus,
-.formulario-tarefa select:focus {
+.formulario-tarefa select:focus,
+.formulario-meta input:focus,
+.formulario-meta select:focus,
+.formulario-meta textarea:focus {
   outline: none;
   border-color: var(--acento);
   box-shadow: 0 0 0 3px var(--acento-suave);
@@ -347,7 +422,8 @@ a:hover { text-decoration: underline; }
 }
 
 /* O atributo hidden precisa vencer o display:flex de .campo. */
-.formulario-tarefa [hidden] { display: none !important; }
+.formulario-tarefa [hidden],
+.formulario-meta [hidden] { display: none !important; }
 
 /* --- Bloco de repetição --- */
 .recorrencia {
@@ -440,6 +516,38 @@ a:hover { text-decoration: underline; }
 .recorrencia-ajuda { color: var(--texto-fraco); }
 .recorrencia-resumo { color: var(--texto-suave); }
 
+/* --- Bloco financeiro do formulário de meta --- */
+.meta-financeiro-campos {
+  min-width: 0;
+  margin: 0;
+  padding: var(--espaco-pequeno) var(--espaco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  background: rgba(255,255,255,.02);
+}
+
+.meta-financeiro-campos legend {
+  padding: 0 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.meta-financeiro-grade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-pequeno);
+}
+
+.meta-ajuda {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--texto-fraco);
+  line-height: 1.4;
+}
+
 .mensagem-sucesso {
   margin: 0 0 var(--espaco);
   padding: 10px 12px;
@@ -451,8 +559,10 @@ a:hover { text-decoration: underline; }
 }
 
 @media (max-width: 560px) {
-  .formulario-tarefa { grid-template-columns: 1fr; }
-  .recorrencia-grade { grid-template-columns: 1fr; }
+  .formulario-tarefa,
+  .formulario-meta { grid-template-columns: 1fr; }
+  .recorrencia-grade,
+  .meta-financeiro-grade { grid-template-columns: 1fr; }
 }
 
 /* ==========================================================================
@@ -499,7 +609,8 @@ a:hover { text-decoration: underline; }
 
 .modal-texto { margin: 0 0 var(--espaco); color: var(--texto-suave); }
 
-.modal .formulario-tarefa { margin-top: 0; }
+.modal .formulario-tarefa,
+.modal .formulario-meta { margin-top: 0; }
 
 /* ==========================================================================
    LISTA DE TAREFAS (tela de dia)
@@ -622,6 +733,10 @@ a:hover { text-decoration: underline; }
   color: var(--texto-suave);
   text-align: center;
   font-size: 0.9rem;
+}
+
+.estado-vazio p {
+  margin: 0;
 }
 
 .aviso-desenvolvimento {
@@ -937,6 +1052,246 @@ a:hover { text-decoration: underline; }
   background: var(--bg-hover);
   color: var(--texto);
   border-color: var(--acento);
+}
+
+/* ==========================================================================
+   METAS
+   ========================================================================== */
+.metas-barra {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco);
+  flex-wrap: wrap;
+  margin-bottom: var(--espaco);
+}
+
+.metas-titulo {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.metas-subtitulo {
+  margin: 4px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+.grade-metas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--espaco);
+}
+
+.meta-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--espaco);
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+  transition: border-color .15s ease;
+}
+
+.meta-cartao:hover {
+  border-color: var(--borda-forte);
+}
+
+.meta-cartao-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-pequeno);
+  flex-wrap: wrap;
+}
+
+.meta-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--texto-suave);
+  white-space: nowrap;
+}
+
+.meta-badge-tipo {
+  background: var(--bg-input);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.meta-badge-ativa {
+  background: var(--acento-suave);
+  border-color: rgba(107,70,193,.4);
+  color: var(--acento);
+}
+
+.meta-badge-concluida {
+  background: rgba(47,133,90,.15);
+  border-color: rgba(74,222,128,.25);
+  color: #4ade80;
+}
+
+.meta-badge-abandonada {
+  color: var(--texto-fraco);
+}
+
+.meta-titulo {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.meta-descricao {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.meta-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.78rem;
+  color: var(--texto-fraco);
+}
+
+.meta-progresso-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.meta-progresso-legenda {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-pequeno);
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+
+.meta-progresso-legenda strong {
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.meta-progresso {
+  height: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.meta-progresso-preenchimento {
+  height: 100%;
+  background: linear-gradient(90deg, var(--acento), var(--acento-forte));
+  border-radius: inherit;
+  transition: width .2s ease;
+}
+
+.meta-cartao.situacao-concluida .meta-progresso-preenchimento {
+  background: #2f855a;
+}
+
+.meta-financeiro {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+}
+
+.meta-financeiro-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--espaco-pequeno);
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.meta-financeiro-linha strong {
+  color: var(--texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.meta-progresso-financeiro {
+  height: 6px;
+}
+
+.meta-financeiro-falta {
+  font-size: 0.75rem;
+  color: var(--texto-fraco);
+}
+
+.meta-financeiro-falta.atingida {
+  color: #4ade80;
+}
+
+.meta-financeiro-vazio {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--texto-fraco);
+}
+
+.meta-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--borda);
+}
+
+.meta-acoes .botao-icone::before {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.meta-acoes .botao-icone[data-acao="editar"]::before { content: "✎"; }
+.meta-acoes .botao-icone[data-acao="excluir"]::before { content: "🗑"; color: var(--critico); }
+.meta-acoes .botao-icone[data-acao="excluir"]:hover {
+  background: var(--critico-suave);
+  color: var(--critico);
+}
+
+.estado-vazio .botao-secundario {
+  margin-top: var(--espaco);
+}
+
+@media (max-width: 560px) {
+  .metas-barra {
+    align-items: stretch;
+  }
+
+  .metas-barra .botao-principal {
+    width: 100%;
+  }
+
+  .grade-metas {
+    grid-template-columns: 1fr;
+  }
+
+  .meta-acoes .botao-icone {
+    width: 40px;
+    height: 40px;
+  }
 }
 
 /* ==========================================================================

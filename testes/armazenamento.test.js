@@ -103,6 +103,27 @@ describe("armazenamento", (suite) => {
     );
   });
 
+  suite.test("carregar cria listas ausentes em estados antigos", (Assert) => {
+    const antigo = {
+      schemaVersion: 1,
+      config: {
+        categoriasTarefas: ["Trabalho"],
+        categoriasFinancas: ["Moradia"]
+      }
+    };
+    salvar(antigo);
+
+    const carregado = carregar();
+    Assert.deepEquals(carregado.tarefas, [], "cria tarefas vazias");
+    Assert.deepEquals(carregado.metas, [], "cria metas vazias");
+    Assert.deepEquals(carregado.lancamentos, [], "cria lançamentos vazios");
+    Assert.deepEquals(carregado.contasFixas, [], "cria contas fixas vazias");
+    Assert.deepEquals(carregado.pagamentos, [], "cria pagamentos vazios");
+
+    const persistido = JSON.parse(localStorage.getItem(CHAVE));
+    Assert.deepEquals(persistido.metas, [], "persiste a lista de metas");
+  });
+
   suite.test("carregar preserva categorias personalizadas", (Assert) => {
     const personalizado = {
       schemaVersion: 1,

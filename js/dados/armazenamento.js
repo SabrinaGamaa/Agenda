@@ -44,19 +44,28 @@ export function carregar() {
     return estadoInicial;
   }
 
-  // Um estado antigo pode ter configuração sem categorias. Sem essa correção,
-  // os seletores do formulário e dos filtros ficam vazios.
-  if (normalizarConfiguracoes(estado)) {
+  // Um estado antigo pode ter configuração sem categorias ou não ter as listas
+  // das fases mais novas. Sem essa correção, os seletores ficam vazios e a
+  // primeira meta criada quebraria ao tentar usar estado.metas.push().
+  if (normalizarEstado(estado)) {
     salvar(estado);
   }
 
   return estado;
 }
 
-// Garante que a configuração exista e que as listas de categorias não fiquem
-// vazias. Devolve true quando alterou algo, para persistir a correção.
-function normalizarConfiguracoes(estado) {
+// Garante que a configuração exista, que as listas de categorias não fiquem
+// vazias e que as coleções de todas as fases existam. Devolve true quando
+// alterou algo, para persistir a correção.
+function normalizarEstado(estado) {
   let alterou = false;
+
+  for (const nome of ["tarefas", "metas", "lancamentos", "contasFixas", "pagamentos"]) {
+    if (!Array.isArray(estado[nome])) {
+      estado[nome] = [];
+      alterou = true;
+    }
+  }
 
   if (!estado.config || typeof estado.config !== "object" || Array.isArray(estado.config)) {
     estado.config = {};

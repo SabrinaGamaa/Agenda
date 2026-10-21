@@ -7,6 +7,7 @@ import {
   atualizarMeta,
   calcularProgresso,
   progressoFinanceiro,
+  validarMeta,
   adicionarEtapa,
   alternarEtapa,
   excluirEtapa,
@@ -190,6 +191,52 @@ describe("metas", (suite) => {
       "alvo zero"
     );
     Assert.equals(progressoFinanceiro(null), null, "meta inexistente");
+  });
+
+  // --- validarMeta ---
+
+  suite.test("validarMeta aponta título, progresso e valores inválidos", (Assert) => {
+    Assert.deepEquals(
+      validarMeta({
+        titulo: "Reserva",
+        tipo: "financeira",
+        progressoManual: 25,
+        valorAlvoCentavos: 100000,
+        valorAtualCentavos: 25000
+      }),
+      [],
+      "meta válida não tem erros"
+    );
+
+    const erros = validarMeta({
+      titulo: "   ",
+      tipo: "financeira",
+      progressoManual: 150,
+      valorAlvoCentavos: 0,
+      valorAtualCentavos: -1
+    });
+
+    Assert.includes(erros, "Informe o título da meta.", "título obrigatório");
+    Assert.includes(
+      erros,
+      "O progresso deve ser um número inteiro entre 0 e 100.",
+      "progresso fora da faixa"
+    );
+    Assert.includes(erros, "Informe um valor alvo maior que zero.", "alvo inválido");
+    Assert.includes(erros, "O valor atual não pode ser negativo.", "atual negativo");
+  });
+
+  suite.test("validarMeta ignora valores financeiros em meta não financeira", (Assert) => {
+    Assert.deepEquals(
+      validarMeta({
+        titulo: "Curso",
+        tipo: "pessoal",
+        progressoManual: 0,
+        valorAlvoCentavos: 0
+      }),
+      [],
+      "meta pessoal não exige valor alvo"
+    );
   });
 
   // --- atualizarMeta ---
