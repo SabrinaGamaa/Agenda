@@ -19,6 +19,7 @@ const DIAS_DA_SEMANA = [
 
 export function criarFormularioTarefa({
   categorias,
+  metas = [],
   aoSalvar,
   valoresIniciais = null,
   rotuloBotao = "Adicionar tarefa",
@@ -74,6 +75,27 @@ export function criarFormularioTarefa({
   duracaoMinutos.min = "5";
   duracaoMinutos.max = "1440";
   duracaoMinutos.step = "5";
+
+  // Vínculo opcional com uma meta. O valor é aplicado depois, por
+  // vincularTarefa (regras de metas), que confere se a meta existe.
+  const listaDeMetas = Array.isArray(metas) ? metas : [];
+  const meta = document.createElement("select");
+
+  const opcaoSemMeta = document.createElement("option");
+  opcaoSemMeta.value = "";
+  opcaoSemMeta.textContent = listaDeMetas.length === 0
+    ? "Nenhuma meta cadastrada"
+    : "Sem meta";
+  meta.appendChild(opcaoSemMeta);
+
+  for (const item of listaDeMetas) {
+    if (!item?.id) continue;
+
+    const opcao = document.createElement("option");
+    opcao.value = item.id;
+    opcao.textContent = item.titulo ?? "Meta sem título";
+    meta.appendChild(opcao);
+  }
 
   // --- Campos de recorrência ---
 
@@ -170,6 +192,15 @@ export function criarFormularioTarefa({
     prioridade.value = "media";
     data.value = dataPadrao ?? hojeISO();
     duracaoMinutos.value = "30";
+  }
+
+  // Se a meta vinculada ainda existir, deixa a opção selecionada. Um vínculo
+  // antigo para meta removida não é oferecido; ao salvar, ele é limpo.
+  if (
+    valoresIniciais?.metaId &&
+    listaDeMetas.some((item) => item?.id === valoresIniciais.metaId)
+  ) {
+    meta.value = valoresIniciais.metaId;
   }
 
   // Na edição de uma ocorrência, a data é a chave da exceção: não pode mudar.
@@ -275,7 +306,7 @@ export function criarFormularioTarefa({
   if (editarSomenteOcorrencia) {
     notaOcorrencia.textContent =
       `As alterações valem somente para ${formatarData(data.value)}. ` +
-      "A série continua igual nos outros dias.";
+      "A série continua igual nos outros dias. O vínculo com uma meta pertence à série.";
   }
 
   // --- Botões ---
@@ -300,6 +331,11 @@ export function criarFormularioTarefa({
 
   // --- Montagem: cada campo dentro de um rótulo, na ordem desejada ---
 
+  // O vínculo pertence à série inteira. Na edição de uma ocorrência,
+  // escondemos o campo para não dar a impressão de que ele vale só para o dia.
+  const campoMeta = criarCampo("Meta (opcional)", meta);
+  campoMeta.hidden = editarSomenteOcorrencia;
+
   formulario.appendChild(criarCampo("Título *", titulo, true));
   formulario.appendChild(criarCampo("Descrição (opcional)", descricao, true));
   formulario.appendChild(criarCampo("Categoria", categoria));
@@ -310,6 +346,7 @@ export function criarFormularioTarefa({
   ));
   formulario.appendChild(criarCampo("Horário de início *", horaInicio));
   formulario.appendChild(criarCampo("Duração (minutos) *", duracaoMinutos));
+  formulario.appendChild(campoMeta);
   formulario.appendChild(blocoRecorrencia);
   formulario.appendChild(notaOcorrencia);
   formulario.appendChild(previa);
@@ -533,10 +570,11 @@ export function criarFormularioTarefa({
       duracaoMinutos: Number(duracaoMinutos.value)
     };
 
-    // Em "somente esta ocorrência" a recorrência nem é enviada: assim a
-    // regra da série não corre o risco de ser alterada sem querer.
+    // Em "somente esta ocorrência" a recorrência e o vínculo com meta não
+    // são enviados: os dois pertencem à série inteira.
     if (!editarSomenteOcorrencia) {
       campos.recorrencia = montarRecorrencia();
+      campos.metaId = meta.value || null;
     }
 
     const mensagensDeErro = validar(campos);

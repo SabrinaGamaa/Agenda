@@ -15,6 +15,7 @@ import {
   excluirTarefa
 } from "../regras/tarefas.js";
 import { ehRecorrente, tarefaOcorreEm } from "../regras/recorrencia.js";
+import { encontrarMeta, vincularTarefa } from "../regras/metas.js";
 import { criarFormularioTarefa } from "../componentes/formulario-tarefa.js";
 import { abrirModal } from "../componentes/modal.js";
 import { criarBarraFiltros } from "../componentes/barra-filtros.js";
@@ -53,10 +54,17 @@ function criarCartaoDeNovaTarefa(estado) {
 
   const formulario = criarFormularioTarefa({
     categorias: estado.config.categoriasTarefas,
+    metas: estado.metas ?? [],
     dataPadrao: dataVisualizada, // sugere a data do dia que está na tela
     aoSalvar: (campos) => {
       const tarefa = criarTarefa(campos);
       estado.tarefas.push(tarefa);
+
+      // O vínculo é aplicado pela regra das metas, que valida a existência.
+      if ("metaId" in campos) {
+        vincularTarefa(estado, tarefa.id, campos.metaId);
+      }
+
       salvar(estado);
       console.log("Tarefa criada:", tarefa);
 
@@ -215,9 +223,18 @@ function criarItemTarefa(estado, ocorrencia, dataISO) {
   const detalhes = document.createElement("span");
   detalhes.className = "tarefa-detalhes";
   const partes = [ocorrencia.categoria, formatarDuracao(ocorrencia.duracaoMinutos)];
+
   if (recorrente) {
     partes.push("↻ recorrente");
   }
+
+  const metaVinculada = ocorrencia.metaId
+    ? encontrarMeta(estado, ocorrencia.metaId)
+    : null;
+  if (metaVinculada) {
+    partes.push(`meta: ${metaVinculada.titulo}`);
+  }
+
   if (ocorrencia.descricao) {
     partes.push(ocorrencia.descricao);
   }
@@ -334,10 +351,18 @@ function abrirEscolhaDeEdicao(estado, ocorrencia, dataISO) {
 function abrirFormularioDeEdicaoDaTarefa(estado, tarefa, dataISO) {
   const formulario = criarFormularioTarefa({
     categorias: estado.config.categoriasTarefas,
+    metas: estado.metas ?? [],
     valoresIniciais: tarefa,
     rotuloBotao: "Salvar alterações",
     aoSalvar: (campos) => {
       atualizarTarefa(estado, tarefa.id, campos);
+
+      // atualizarTarefa preserva o vínculo; a regra das metas aplica a troca
+      // (ou a remoção, quando o campo vem vazio).
+      if ("metaId" in campos) {
+        vincularTarefa(estado, tarefa.id, campos.metaId);
+      }
+
       salvar(estado);
       modal.close();
 

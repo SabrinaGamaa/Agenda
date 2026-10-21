@@ -289,12 +289,14 @@ describe("tarefas", (suite) => {
     ajustarOcorrencia(estado, diaria.id, "2026-10-19", {
       titulo: "Nova",
       data: "2026-12-01",
-      recorrencia: null
+      recorrencia: null,
+      metaId: "meta-ficticia"
     });
 
     Assert.true(diaria.excecoes["2026-10-19"].concluida, "conclusão preservada");
     Assert.equals(diaria.excecoes["2026-10-19"].titulo, "Nova", "título ajustado");
     Assert.false("data" in diaria.excecoes["2026-10-19"], "data não é campo de ocorrência");
+    Assert.false("metaId" in diaria.excecoes["2026-10-19"], "vínculo com meta pertence à série");
     Assert.equals(diaria.data, "2026-10-18", "data da série intacta");
     Assert.deepEquals(diaria.recorrencia, regra, "regra da série intacta");
     Assert.equals(ajustarOcorrencia(estado, "nao-existe", "2026-10-19", { titulo: "X" }), null, "id inexistente");
@@ -373,6 +375,24 @@ describe("tarefas", (suite) => {
     Assert.equals(t.horaInicio, "11:00");
     Assert.equals(t.duracaoMinutos, 45);
     Assert.true(t.atualizadaEm > antiga, "atualizadaEm mudou");
+  });
+
+  suite.test("atualizarTarefa preserva o vínculo com a meta", (Assert) => {
+    const t = criarTarefa({ titulo: "Antiga", descricao: "", categoria: "X", prioridade: "baixa", data: "2026-10-18", horaInicio: "10:00", duracaoMinutos: 30 });
+    t.metaId = "meta-ficticia";
+    estado.tarefas.push(t);
+
+    atualizarTarefa(estado, t.id, {
+      titulo: "Nova",
+      descricao: "",
+      categoria: "X",
+      prioridade: "media",
+      data: "2026-10-18",
+      horaInicio: "10:00",
+      duracaoMinutos: 30
+    });
+
+    Assert.equals(t.metaId, "meta-ficticia", "metaId não enviado é preservado");
   });
 
   // --- excluirTarefa ---

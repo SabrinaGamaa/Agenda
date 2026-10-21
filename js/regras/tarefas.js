@@ -26,7 +26,7 @@ export function criarTarefa(campos) {
     horaInicio: "",
     duracaoMinutos: 0,
     recorrencia: null, // sem repetição por padrão; o formulário pode enviar uma regra
-    metaId: null,
+    metaId: null, // o vínculo é validado e aplicado por vincularTarefa (regras de metas)
     excecoes: {}, // ajustes por ocorrência (fase das recorrências)
     criadaEm: agora,
     atualizadaEm: agora
@@ -50,6 +50,9 @@ function aplicarCampos(tarefa, campos) {
   if ("recorrencia" in campos) {
     tarefa.recorrencia = campos.recorrencia ?? null;
   }
+
+  // metaId fica de fora de propósito: o vínculo só muda por vincularTarefa,
+  // que valida se a meta existe. Assim, editar outros campos o preserva.
 }
 
 // Devolve as tarefas (definições) cuja data inicial é o dia informado.

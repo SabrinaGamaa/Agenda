@@ -5,12 +5,18 @@ import {
   criarMeta,
   atualizarMeta,
   excluirMeta,
+  encontrarMeta,
   calcularProgresso,
   progressoFinanceiro,
+  adicionarEtapa,
+  alternarEtapa,
+  excluirEtapa,
+  vincularTarefa,
   tarefasDaMeta
 } from "../regras/metas.js";
 import { formatarCentavos } from "../regras/dinheiro.js";
 import { formatarData } from "../regras/datas.js";
+import { ehRecorrente } from "../regras/recorrencia.js";
 import { criarFormularioMeta } from "../componentes/formulario-meta.js";
 import { abrirModal } from "../componentes/modal.js";
 import { salvar } from "../dados/armazenamento.js";
@@ -113,6 +119,7 @@ function criarCartaoMeta(estado, meta) {
   const progresso = calcularProgresso(meta);
   const etapas = Array.isArray(meta.etapas) ? meta.etapas : [];
   const concluidas = etapas.filter((etapa) => etapa?.concluida).length;
+  const tarefasVinculadas = tarefasDaMeta(estado, meta.id).length;
   const tituloId = `meta-titulo-${meta.id}`;
 
   const cartao = document.createElement("article");
@@ -163,6 +170,15 @@ function criarCartaoMeta(estado, meta) {
 
   info.appendChild(prazo);
   info.appendChild(etapasTexto);
+
+  if (tarefasVinculadas > 0) {
+    const tarefasTexto = document.createElement("span");
+    tarefasTexto.textContent = tarefasVinculadas === 1
+      ? "1 tarefa vinculada"
+      : `${tarefasVinculadas} tarefas vinculadas`;
+    info.appendChild(tarefasTexto);
+  }
+
   cartao.appendChild(info);
 
   // Em meta financeira sem etapas, a barra financeira já é o progresso.
@@ -177,6 +193,13 @@ function criarCartaoMeta(estado, meta) {
 
   const acoes = document.createElement("div");
   acoes.className = "meta-acoes";
+
+  const detalhes = document.createElement("button");
+  detalhes.type = "button";
+  detalhes.className = "botao-discreto meta-botao-detalhes";
+  detalhes.textContent = "Detalhes";
+  detalhes.addEventListener("click", () => abrirDetalhesMeta(estado, meta.id));
+  acoes.appendChild(detalhes);
 
   acoes.appendChild(criarBotaoAcao("editar", "Editar meta", () => {
     abrirFormularioEdicaoMeta(estado, meta);
@@ -328,6 +351,348 @@ function abrirFormularioEdicaoMeta(estado, meta) {
     titulo: "Editar meta",
     conteudo: formulario
   });
+}
+
+// --- Detalhes, etapas e tarefas vinculadas ---
+
+function abrirDetalhesMeta(estado, metaId) {
+  const conteudo = document.createElement("div");
+  const modal = abrirModal({ titulo: "Detalhes da meta", conteudo });
+  modal.classList.add("modal-largo");
+
+  // Redesenha só o conteúdo do modal; a tela de metas atrás é atualizada
+  // separadamente para refletir o novo progresso nos cartões.
+  function redesenhar({ focarNovaEtapa = false } = {}) {
+    const meta = encontrarMeta(estado, metaId);
+    conteudo.innerHTML = "";
+
+    if (meta === null) {
+      modal.close();
+      return;
+    }
+
+    conteudo.appendChild(criarDetalhesDaMeta(estado, meta, {
+      aoAlterar: (opcoes) => {
+        salvar(estado);
+        desenharMetas(estado);
+        redesenhar(opcoes);
+      },
+      aoEditar: () => {
+        modal.close();
+        abrirFormularioEdicaoMeta(estado, meta);
+      },
+      aoFechar: () => modal.close()
+    }));
+
+    if (focarNovaEtapa) {
+      const campo = conteudo.querySelector(".formulario-etapa input");
+      campo?.focus();
+    }
+  }
+
+  redesenhar();
+}
+
+function criarDetalhesDaMeta(estado, meta, acoes) {
+  const etapas = Array.isArray(meta.etapas) ? meta.etapas : [];
+  const tipo = ROTULOS_TIPO[meta.tipo] ? meta.tipo : "pessoal";
+  const situacao = ROTULOS_SITUACAO[meta.situacao] ? meta.situacao : "ativa";
+  const tituloId = `meta-detalhes-titulo-${meta.id}`;
+
+  const bloco = document.createElement("div");
+  bloco.className = "meta-detalhes";
+
+  const topo = document.createElement("div");
+  topo.className = "meta-cartao-topo";
+
+  const seloTipo = document.createElement("span");
+  seloTipo.className = "meta-badge meta-badge-tipo";
+  seloTipo.textContent = ROTULOS_TIPO[tipo];
+
+  const seloSituacao = document.createElement("span");
+  seloSituacao.className = `meta-badge meta-badge-${situacao}`;
+  seloSituacao.textContent = ROTULOS_SITUACAO[situacao];
+
+  topo.appendChild(seloTipo);
+  topo.appendChild(seloSituacao);
+
+  const titulo = document.createElement("h3");
+  titulo.className = "meta-detalhes-titulo";
+  titulo.id = tituloId;
+  titulo.textContent = meta.titulo;
+
+  bloco.appendChild(topo);
+  bloco.appendChild(titulo);
+
+  if (meta.descricao) {
+    const descricao = document.createElement("p");
+    descricao.className = "meta-detalhes-descricao";
+    descricao.textContent = meta.descricao;
+    bloco.appendChild(descricao);
+  }
+
+  const info = document.createElement("div");
+  info.className = "meta-info";
+
+  const prazo = document.createElement("span");
+  prazo.textContent = meta.prazo ? `Prazo: ${formatarData(meta.prazo)}` : "Sem prazo";
+  info.appendChild(prazo);
+  bloco.appendChild(info);
+
+  // Mesma regra dos cartões: a barra financeira é o progresso principal
+  // quando a meta é financeira e não há etapas.
+  if (etapas.length > 0 || tipo !== "financeira") {
+    const rotulo = etapas.length > 0
+      ? "Progresso pelas etapas"
+      : "Progresso manual";
+    bloco.appendChild(criarProgresso(tituloId, calcularProgresso(meta), rotulo));
+  }
+
+  if (tipo === "financeira") {
+    bloco.appendChild(criarResumoFinanceiro(meta, tituloId));
+  }
+
+  bloco.appendChild(criarSecaoDeEtapas(estado, meta, acoes));
+  bloco.appendChild(criarSecaoDeTarefas(estado, meta, acoes));
+  bloco.appendChild(criarRodapeDosDetalhes(acoes));
+
+  return bloco;
+}
+
+function criarSecaoDeEtapas(estado, meta, acoes) {
+  const etapas = Array.isArray(meta.etapas) ? meta.etapas : [];
+  const concluidas = etapas.filter((etapa) => etapa?.concluida).length;
+
+  const secao = document.createElement("section");
+  secao.className = "meta-secao";
+
+  const titulo = document.createElement("h4");
+  titulo.className = "meta-secao-titulo";
+  titulo.textContent = "Etapas";
+  secao.appendChild(titulo);
+
+  const ajuda = document.createElement("p");
+  ajuda.className = "meta-ajuda";
+
+  if (etapas.length === 0) {
+    ajuda.textContent = meta.tipo === "financeira"
+      ? "Sem etapas. A barra financeira é o progresso principal; adicione etapas para acompanhar marcos."
+      : `Sem etapas. Vale o progresso manual (${calcularProgresso(meta)}%); ` +
+        "use “Editar meta” para ajustá-lo ou adicione etapas para calcular automaticamente.";
+  } else {
+    ajuda.textContent =
+      `${concluidas} de ${etapas.length} etapa(s) concluída(s). ` +
+      "O progresso é calculado pelas etapas.";
+  }
+
+  secao.appendChild(ajuda);
+
+  if (etapas.length > 0) {
+    const lista = document.createElement("ul");
+    lista.className = "lista-etapas";
+
+    for (const etapa of etapas) {
+      lista.appendChild(criarItemEtapa(estado, meta, etapa, acoes));
+    }
+
+    secao.appendChild(lista);
+  }
+
+  secao.appendChild(criarFormularioEtapa(estado, meta, acoes));
+  return secao;
+}
+
+function criarItemEtapa(estado, meta, etapa, acoes) {
+  const item = document.createElement("li");
+  item.className = `meta-etapa${etapa.concluida ? " concluida" : ""}`;
+
+  const rotulo = document.createElement("label");
+  rotulo.className = "meta-etapa-rotulo";
+
+  const checkbox = document.createElement("input");
+  checkbox.type = "checkbox";
+  checkbox.checked = etapa.concluida === true;
+
+  checkbox.addEventListener("change", () => {
+    if (alternarEtapa(estado, meta.id, etapa.id) === null) {
+      checkbox.checked = !checkbox.checked;
+      return;
+    }
+
+    acoes.aoAlterar();
+  });
+
+  const texto = document.createElement("span");
+  texto.className = "meta-etapa-titulo";
+  texto.textContent = etapa.titulo;
+
+  rotulo.appendChild(checkbox);
+  rotulo.appendChild(texto);
+
+  const remover = document.createElement("button");
+  remover.type = "button";
+  remover.className = "botao-icone meta-etapa-remover";
+  remover.textContent = "🗑";
+  remover.setAttribute("aria-label", `Excluir etapa "${etapa.titulo}"`);
+
+  remover.addEventListener("click", () => {
+    if (excluirEtapa(estado, meta.id, etapa.id) === null) return;
+    acoes.aoAlterar();
+  });
+
+  item.appendChild(rotulo);
+  item.appendChild(remover);
+  return item;
+}
+
+function criarFormularioEtapa(estado, meta, acoes) {
+  const formulario = document.createElement("form");
+  formulario.className = "formulario-etapa";
+  formulario.noValidate = true;
+
+  const entrada = document.createElement("input");
+  entrada.type = "text";
+  entrada.maxLength = 120;
+  entrada.placeholder = "Ex.: Separar o valor mensal";
+  entrada.setAttribute("aria-label", "Título da nova etapa");
+
+  const botao = document.createElement("button");
+  botao.type = "submit";
+  botao.className = "botao-secundario";
+  botao.textContent = "Adicionar etapa";
+
+  const erro = document.createElement("p");
+  erro.className = "erro-formulario";
+  erro.hidden = true;
+
+  entrada.addEventListener("input", () => {
+    if (!erro.hidden) erro.hidden = true;
+  });
+
+  formulario.addEventListener("submit", (evento) => {
+    evento.preventDefault();
+
+    if (entrada.value.trim() === "") {
+      erro.textContent = "Digite o título da etapa.";
+      erro.hidden = false;
+      entrada.focus();
+      return;
+    }
+
+    if (adicionarEtapa(estado, meta.id, entrada.value) === null) {
+      erro.textContent = "Não foi possível adicionar a etapa.";
+      erro.hidden = false;
+      return;
+    }
+
+    acoes.aoAlterar({ focarNovaEtapa: true });
+  });
+
+  formulario.appendChild(entrada);
+  formulario.appendChild(botao);
+  formulario.appendChild(erro);
+  return formulario;
+}
+
+function criarSecaoDeTarefas(estado, meta, acoes) {
+  const tarefas = tarefasDaMeta(estado, meta.id);
+
+  const secao = document.createElement("section");
+  secao.className = "meta-secao";
+
+  const titulo = document.createElement("h4");
+  titulo.className = "meta-secao-titulo";
+  titulo.textContent = "Tarefas vinculadas";
+  secao.appendChild(titulo);
+
+  const ajuda = document.createElement("p");
+  ajuda.className = "meta-ajuda";
+
+  if (tarefas.length === 0) {
+    ajuda.textContent =
+      "Nenhuma tarefa vinculada. No formulário de uma tarefa, escolha esta meta em “Meta (opcional)”.";
+    secao.appendChild(ajuda);
+    return secao;
+  }
+
+  ajuda.textContent = tarefas.length === 1
+    ? "1 tarefa vinculada. Ela é referência e não altera o progresso."
+    : `${tarefas.length} tarefas vinculadas. Elas são referência e não alteram o progresso.`;
+  secao.appendChild(ajuda);
+
+  const lista = document.createElement("ul");
+  lista.className = "lista-tarefas-meta";
+
+  for (const tarefa of tarefas) {
+    lista.appendChild(criarItemTarefaDaMeta(estado, tarefa, acoes));
+  }
+
+  secao.appendChild(lista);
+  return secao;
+}
+
+function criarItemTarefaDaMeta(estado, tarefa, acoes) {
+  const item = document.createElement("li");
+  item.className = "tarefa-meta";
+
+  const info = document.createElement("div");
+  info.className = "tarefa-meta-info";
+
+  const titulo = document.createElement("strong");
+  titulo.className = "tarefa-meta-titulo";
+  titulo.textContent = tarefa.titulo;
+
+  const detalhes = document.createElement("span");
+  detalhes.className = "tarefa-meta-detalhes";
+
+  const partes = [];
+  if (tarefa.data) partes.push(formatarData(tarefa.data));
+  if (tarefa.horaInicio) partes.push(tarefa.horaInicio);
+  if (tarefa.categoria) partes.push(tarefa.categoria);
+  if (ehRecorrente(tarefa)) partes.push("↻ recorrente");
+  detalhes.textContent = partes.join(" · ") || "Sem data definida";
+
+  info.appendChild(titulo);
+  info.appendChild(detalhes);
+
+  const desvincular = document.createElement("button");
+  desvincular.type = "button";
+  desvincular.className = "botao-discreto";
+  desvincular.textContent = "Desvincular";
+  desvincular.setAttribute(
+    "aria-label",
+    `Desvincular a tarefa "${tarefa.titulo}" desta meta`
+  );
+
+  desvincular.addEventListener("click", () => {
+    if (vincularTarefa(estado, tarefa.id, null) === null) return;
+    acoes.aoAlterar();
+  });
+
+  item.appendChild(info);
+  item.appendChild(desvincular);
+  return item;
+}
+
+function criarRodapeDosDetalhes(acoes) {
+  const grupo = document.createElement("div");
+  grupo.className = "grupo-botoes meta-detalhes-acoes";
+
+  const fechar = document.createElement("button");
+  fechar.type = "button";
+  fechar.className = "botao-secundario";
+  fechar.textContent = "Fechar";
+  fechar.addEventListener("click", () => acoes.aoFechar());
+
+  const editar = document.createElement("button");
+  editar.type = "button";
+  editar.className = "botao-principal";
+  editar.textContent = "Editar meta";
+  editar.addEventListener("click", () => acoes.aoEditar());
+
+  grupo.appendChild(fechar);
+  grupo.appendChild(editar);
+  return grupo;
 }
 
 // --- Exclusão ---

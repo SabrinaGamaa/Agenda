@@ -306,6 +306,7 @@ a:hover { text-decoration: underline; }
   padding: 0;
   background: transparent;
   color: var(--texto-suave);
+  border: none;
   border-radius: var(--raio-pequeno);
 }
 .botao-icone:hover {
@@ -606,6 +607,7 @@ a:hover { text-decoration: underline; }
   cursor: pointer;
 }
 .modal-fechar:hover { background: var(--bg-hover); color: var(--texto); }
+.modal-fechar:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
 
 .modal-texto { margin: 0 0 var(--espaco); color: var(--texto-suave); }
 
@@ -1252,11 +1254,16 @@ a:hover { text-decoration: underline; }
 
 .meta-acoes {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 4px;
   margin-top: auto;
   padding-top: 8px;
   border-top: 1px solid var(--borda);
+}
+
+.meta-acoes .meta-botao-detalhes {
+  margin-right: auto;
 }
 
 .meta-acoes .botao-icone::before {
@@ -1269,6 +1276,179 @@ a:hover { text-decoration: underline; }
 .meta-acoes .botao-icone[data-acao="excluir"]:hover {
   background: var(--critico-suave);
   color: var(--critico);
+}
+
+/* --- Detalhes da meta (modal) --- */
+.modal-largo {
+  width: min(640px, 94vw);
+}
+
+.meta-detalhes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.meta-detalhes-titulo {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.35;
+}
+
+.meta-detalhes-descricao {
+  margin: 0;
+  color: var(--texto-suave);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.meta-secao {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--borda);
+}
+
+.meta-secao-titulo {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lista-etapas,
+.lista-tarefas-meta {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.meta-etapa {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+}
+
+.meta-etapa-rotulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.meta-etapa-rotulo input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  padding: 0;
+  margin: 0;
+  accent-color: var(--acento);
+}
+
+.meta-etapa-titulo {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+}
+
+.meta-etapa.concluida .meta-etapa-titulo {
+  color: var(--texto-fraco);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
+
+.meta-etapa-remover {
+  width: 30px;
+  height: 30px;
+  font-size: 0.85rem;
+  flex: none;
+}
+
+.meta-etapa-remover:hover {
+  background: var(--critico-suave);
+  color: var(--critico);
+}
+
+.formulario-etapa {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.formulario-etapa input[type="text"] {
+  flex: 1 1 180px;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 9px 11px;
+  background: var(--bg-input);
+  color: var(--texto);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+}
+
+.formulario-etapa input[type="text"]:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px var(--acento-suave);
+}
+
+.formulario-etapa .erro-formulario {
+  flex-basis: 100%;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+}
+
+.tarefa-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco);
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+}
+
+.tarefa-meta-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tarefa-meta-titulo {
+  font-size: 0.9rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.tarefa-meta-detalhes {
+  font-size: 0.75rem;
+  color: var(--texto-fraco);
+}
+
+.tarefa-meta .botao-discreto {
+  flex: none;
+  padding: 5px 8px;
+  font-size: 0.75rem;
+}
+
+.meta-detalhes-acoes {
+  padding-top: 12px;
+  border-top: 1px solid var(--borda);
 }
 
 .estado-vazio .botao-secundario {
@@ -1291,6 +1471,19 @@ a:hover { text-decoration: underline; }
   .meta-acoes .botao-icone {
     width: 40px;
     height: 40px;
+  }
+
+  .modal-largo {
+    width: 94vw;
+  }
+
+  .tarefa-meta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .tarefa-meta .botao-discreto {
+    align-self: flex-end;
   }
 }
 
