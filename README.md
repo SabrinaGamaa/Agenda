@@ -6,7 +6,7 @@ O plano completo do projeto (fases, modelo de dados, regras e critérios de conc
 
 ## Situação atual
 
-**Fase 2 completa; Fase 3 em andamento.** O Home alterna entre **Mês** (calendário com bolinhas de prioridade) e **Semana** (tarefas de cada dia lado a lado), com navegação ‹ › e botão "Hoje". Filtros por categoria, prioridade e situação valem nas três visões (mês, semana e dia). As ocorrências de tarefas recorrentes são calculadas e exibidas nas três visões, e o formulário já permite criar e editar séries (diária, semanal, dias da semana e mensal), com fim nunca, em data ou após N ocorrências. As exceções por ocorrência (cancelar/alterar/concluir só um dia) chegam no próximo passo da Fase 3. Export/import JSON completo e testes automatizados em `testes/testes.html`.
+**Fase 3 completa.** O Home alterna entre **Mês** (calendário com bolinhas de prioridade) e **Semana** (tarefas de cada dia lado a lado), com navegação ‹ › e botão "Hoje". Filtros por categoria, prioridade e situação valem nas três visões (mês, semana e dia). As ocorrências de tarefas recorrentes são calculadas e exibidas nas três visões; o formulário cria e edita séries (diária, semanal, dias da semana e mensal), com fim nunca, em data ou após N ocorrências. Cada ocorrência também pode ser **concluída, alterada ou cancelada sozinha**, sem mudar os outros dias, ou a **série inteira** pode ser editada/excluída. Próxima fase: metas (F4). Export/import JSON completo e testes automatizados em `testes/testes.html`.
 
 ## Como abrir o projeto
 
@@ -50,9 +50,10 @@ Depois abra o endereço mostrado pelo comando (geralmente `http://localhost:3000
 4. **Filtros** (topo, à direita): **Categoria**, **Prioridade** e **Situação** combinam entre si (ex.: Trabalho + Alta + Pendentes); "Limpar filtros" volta ao normal. Vale nas três visões: mês (bolinhas), semana (cartões) e tela do dia (lista).
 5. **Clique num dia** (no calendário, no cabeçalho do dia da semana, ou num cartão de tarefa) → abre a **tela de tarefas** daquele dia.
 6. Na tela do dia: botão **⌂ (Home)** no cabeçalho; navegação ‹ › + **Hoje**; formulário "Nova tarefa" (data já preenchida); ações por ícone: concluir ✓ / reabrir ↺ / editar ✎ / excluir 🗑 (com confirmação).
-7. **Recorrência**: no formulário, em **Repetição**, escolha "Todos os dias", "Toda semana", "Dias da semana" ou "Todo mês". Ajuste o intervalo, marque os dias (quando for o caso) e escolha **Termina**: nunca, em uma data ou após N ocorrências. O resumo abaixo do bloco mostra a regra antes de salvar. Ao editar uma tarefa recorrente, o formulário abre com a regra atual e altera a série inteira (as exceções de um dia só entram no próximo passo).
-8. **Período vazio**: sem tarefas (ou todas filtradas), cada visão mostra uma mensagem clara — ex.: "Nenhuma tarefa nesta semana com os filtros atuais."
-9. **Exportar/Importar**: menu **⋮** no cabeçalho → "Exportar JSON" / "Importar JSON".
-10. **Testes automatizados**: abra `http://localhost:5500/testes/testes.html` → "▶ Executar todos os testes" → veja ✅/❌ por suite.
-11. **Recarregue**: volta pro Home (visão Mês, mês de hoje); dados intactos.
-12. Console (`F12`): sem erros.
+7. **Recorrência**: no formulário, em **Repetição**, escolha "Todos os dias", "Toda semana", "Dias da semana" ou "Todo mês". Ajuste o intervalo, marque os dias (quando for o caso) e escolha **Termina**: nunca, em uma data ou após N ocorrências. O resumo abaixo do bloco mostra a regra antes de salvar. Ao editar uma tarefa recorrente, escolha entre **Toda a série** (o formulário completo, com a regra atual) e **Somente esta ocorrência**.
+8. **Exceções de uma ocorrência**: clique em **editar ✎** numa tarefa recorrente → "Somente esta ocorrência": a data fica fixa, o bloco de repetição some e as alterações valem só para aquele dia. Para remover um dia, clique em **excluir 🗑** → "Cancelar esta ocorrência" (a série continua nos outros dias). "Excluir a série inteira" pede uma segunda confirmação. Concluir/reabrir ✓ também afeta só o dia.
+9. **Período vazio**: sem tarefas (ou todas filtradas), cada visão mostra uma mensagem clara — ex.: "Nenhuma tarefa nesta semana com os filtros atuais."
+10. **Exportar/Importar**: menu **⋮** no cabeçalho → "Exportar JSON" / "Importar JSON".
+11. **Testes automatizados**: abra `http://localhost:5500/testes/testes.html` → "▶ Executar todos os testes" → veja ✅/❌ por suite.
+12. **Recarregue**: volta pro Home (visão Mês, mês de hoje); dados intactos.
+13. Console (`F12`): sem erros.

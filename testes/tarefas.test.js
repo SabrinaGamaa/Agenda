@@ -9,6 +9,8 @@ import {
   encontrarTarefa,
   estaConcluida,
   alternarConclusao,
+  cancelarOcorrencia,
+  ajustarOcorrencia,
   atualizarTarefa,
   excluirTarefa
 } from "../js/regras/tarefas.js";
@@ -195,6 +197,108 @@ describe("tarefas", (suite) => {
     const dia20 = ocorrenciasDoDia(estado, "2026-10-20")[0];
     Assert.true(estaConcluida(dia19, "2026-10-19"), "19 concluída");
     Assert.false(estaConcluida(dia20, "2026-10-20"), "20 continua pendente");
+  });
+
+  suite.test("cancelarOcorrencia cancela só a data escolhida e preserva a conclusão", (Assert) => {
+    const diaria = criarTarefa({ titulo: "Diária", descricao: "", categoria: "Estudos", prioridade: "alta", data: "2026-10-18", horaInicio: "09:00", duracaoMinutos: 30 });
+    diaria.recorrencia = { tipo: "diaria", intervalo: 1, fim: { tipo: "nunca" } };
+    estado.tarefas.push(diaria);
+
+    alternarConclusao(estado, diaria.id, "2026-10-20");
+    const resultado = cancelarOcorrencia(estado, diaria.id, "2026-10-19");
+
+    Assert.equals(resultado, diaria, "devolve a tarefa alterada");
+    Assert.true(diaria.excecoes["2026-10-19"].cancelada, "19 marcada como cancelada");
+    Assert.true(estaConcluida(diaria, "2026-10-20"), "conclusão do dia 20 preservada");
+    Assert.length(ocorrenciasDoDia(estado, "2026-10-18"), 1, "18 continua");
+    Assert.length(ocorrenciasDoDia(estado, "2026-10-19"), 0, "19 some da lista");
+    Assert.length(ocorrenciasDoDia(estado, "2026-10-20"), 1, "20 continua");
+    Assert.equals(diaria.recorrencia.tipo, "diaria", "definição da série intacta");
+  });
+
+  suite.test("cancelarOcorrencia recusa tarefa ou data que não existe", (Assert) => {
+    const diaria = criarTarefa({ titulo: "Diária", descricao: "", categoria: "Estudos", prioridade: "alta", data: "2026-10-18", horaInicio: "09:00", duracaoMinutos: 30 });
+    diaria.recorrencia = { tipo: "diaria", intervalo: 1, fim: { tipo: "emData", data: "2026-10-20" } };
+    estado.tarefas.push(diaria);
+
+    Assert.equals(cancelarOcorrencia(estado, "nao-existe", "2026-10-19"), null, "id inexistente");
+    Assert.equals(cancelarOcorrencia(estado, diaria.id, "2026-10-17"), null, "data antes do início");
+    Assert.equals(cancelarOcorrencia(estado, diaria.id, "2026-10-21"), null, "data depois do fim");
+    Assert.deepEquals(diaria.excecoes, {}, "nada foi gravado");
+  });
+
+  suite.test("ajustarOcorrencia guarda só as diferenças e não altera a série", (Assert) => {
+    const diaria = criarTarefa({ titulo: "Original", descricao: "", categoria: "Estudos", prioridade: "alta", data: "2026-10-18", horaInicio: "09:00", duracaoMinutos: 30 });
+    diaria.recorrencia = { tipo: "diaria", intervalo: 1, fim: { tipo: "nunca" } };
+    estado.tarefas.push(diaria);
+
+    ajustarOcorrencia(estado, diaria.id, "2026-10-19", {
+      titulo: "  Ajustada  ",
+      descricao: "  Só hoje  ",
+      categoria: "Estudos",
+      prioridade: "alta",
+      horaInicio: "15:00",
+      duracaoMinutos: 45
+    });
+
+    const dia19 = ocorrenciasDoDia(estado, "2026-10-19")[0];
+    const dia20 = ocorrenciasDoDia(estado, "2026-10-20")[0];
+
+    Assert.equals(dia19.titulo, "Ajustada", "título ajustado e sem espaços");
+    Assert.equals(dia19.descricao, "Só hoje", "descrição ajustada");
+    Assert.equals(dia19.horaInicio, "15:00", "horário ajustado");
+    Assert.equals(dia19.duracaoMinutos, 45, "duração ajustada");
+    Assert.equals(dia20.titulo, "Original", "o dia seguinte não mudou");
+    Assert.equals(dia20.horaInicio, "09:00", "horário do dia seguinte intacto");
+
+    Assert.equals(diaria.titulo, "Original", "definição da série intacta");
+    Assert.equals(diaria.horaInicio, "09:00", "horário da série intacto");
+    Assert.equals(diaria.duracaoMinutos, 30, "duração da série intacta");
+    Assert.false("categoria" in diaria.excecoes["2026-10-19"], "campo igual à série não é guardado");
+    Assert.false("prioridade" in diaria.excecoes["2026-10-19"], "prioridade igual não é guardada");
+  });
+
+  suite.test("ajustarOcorrencia remove o ajuste quando o valor volta ao da série", (Assert) => {
+    const diaria = criarTarefa({ titulo: "Original", descricao: "", categoria: "Estudos", prioridade: "alta", data: "2026-10-18", horaInicio: "09:00", duracaoMinutos: 30 });
+    diaria.recorrencia = { tipo: "diaria", intervalo: 1, fim: { tipo: "nunca" } };
+    estado.tarefas.push(diaria);
+
+    ajustarOcorrencia(estado, diaria.id, "2026-10-19", { titulo: "Ajustada", horaInicio: "15:00" });
+    Assert.true("2026-10-19" in diaria.excecoes, "exceção criada");
+
+    ajustarOcorrencia(estado, diaria.id, "2026-10-19", {
+      titulo: "Original",
+      descricao: "",
+      categoria: "Estudos",
+      prioridade: "alta",
+      horaInicio: "09:00",
+      duracaoMinutos: 30
+    });
+
+    Assert.false("2026-10-19" in diaria.excecoes, "exceção vazia foi removida");
+    Assert.equals(ocorrenciasDoDia(estado, "2026-10-19")[0].titulo, "Original", "voltou ao valor da série");
+  });
+
+  suite.test("ajustarOcorrencia preserva conclusão e ignora campos da série", (Assert) => {
+    const regra = { tipo: "diaria", intervalo: 1, fim: { tipo: "nunca" } };
+    const diaria = criarTarefa({ titulo: "Original", descricao: "", categoria: "Estudos", prioridade: "alta", data: "2026-10-18", horaInicio: "09:00", duracaoMinutos: 30 });
+    diaria.recorrencia = regra;
+    estado.tarefas.push(diaria);
+
+    alternarConclusao(estado, diaria.id, "2026-10-19");
+    ajustarOcorrencia(estado, diaria.id, "2026-10-19", {
+      titulo: "Nova",
+      data: "2026-12-01",
+      recorrencia: null
+    });
+
+    Assert.true(diaria.excecoes["2026-10-19"].concluida, "conclusão preservada");
+    Assert.equals(diaria.excecoes["2026-10-19"].titulo, "Nova", "título ajustado");
+    Assert.false("data" in diaria.excecoes["2026-10-19"], "data não é campo de ocorrência");
+    Assert.equals(diaria.data, "2026-10-18", "data da série intacta");
+    Assert.deepEquals(diaria.recorrencia, regra, "regra da série intacta");
+    Assert.equals(ajustarOcorrencia(estado, "nao-existe", "2026-10-19", { titulo: "X" }), null, "id inexistente");
+    Assert.equals(ajustarOcorrencia(estado, diaria.id, "2026-10-17", { titulo: "X" }), null, "data fora da série");
   });
 
   suite.test("ordenação usa o horário ajustado da ocorrência", (Assert) => {

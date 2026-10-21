@@ -9,6 +9,8 @@ import {
   ordenarTarefasDoDia,
   estaConcluida,
   alternarConclusao,
+  cancelarOcorrencia,
+  ajustarOcorrencia,
   atualizarTarefa,
   excluirTarefa
 } from "../regras/tarefas.js";
@@ -244,11 +246,9 @@ function criarItemTarefa(estado, ocorrencia, dataISO) {
   acoes.appendChild(
     criarBotaoAcao(
       "editar",
-      recorrente ? "Editar série" : "Editar",
+      recorrente ? "Editar ocorrência ou série" : "Editar",
       () => {
-        // Nesta etapa, editar uma ocorrência recorrente edita a série inteira.
-        // O "somente esta ocorrência" entra no passo das exceções.
-        abrirEdicaoDeTarefa(estado, tarefaOriginal);
+        abrirEdicaoDeTarefa(estado, ocorrencia, dataISO);
       }
     )
   );
@@ -256,9 +256,9 @@ function criarItemTarefa(estado, ocorrencia, dataISO) {
   acoes.appendChild(
     criarBotaoAcao(
       "excluir",
-      recorrente ? "Excluir série" : "Excluir",
+      recorrente ? "Cancelar ocorrência ou excluir série" : "Excluir",
       () => {
-        confirmarExclusaoDeTarefa(estado, tarefaOriginal);
+        confirmarExclusaoDeTarefa(estado, ocorrencia, dataISO);
       }
     )
   );
@@ -269,8 +269,69 @@ function criarItemTarefa(estado, ocorrencia, dataISO) {
   return item;
 }
 
-// Abre a janela de edição, com o formulário preenchido com os dados atuais.
-function abrirEdicaoDeTarefa(estado, tarefa) {
+// Abre a edição. Tarefa única vai direto ao formulário; série pergunta
+// se a alteração vale só para o dia clicado ou para todas as ocorrências.
+function abrirEdicaoDeTarefa(estado, ocorrencia, dataISO) {
+  const tarefa = ocorrencia.tarefaOriginal ?? ocorrencia;
+
+  if (ehRecorrente(tarefa)) {
+    abrirEscolhaDeEdicao(estado, ocorrencia, dataISO);
+  } else {
+    abrirFormularioDeEdicaoDaTarefa(estado, tarefa, dataISO);
+  }
+}
+
+// Pergunta o alcance da edição de uma ocorrência recorrente.
+function abrirEscolhaDeEdicao(estado, ocorrencia, dataISO) {
+  const tarefa = ocorrencia.tarefaOriginal;
+  const conteudo = document.createElement("div");
+
+  const texto = document.createElement("p");
+  texto.className = "modal-texto";
+  texto.textContent = `“${ocorrencia.titulo}” faz parte de uma série. O que você quer editar?`;
+
+  const detalhe = document.createElement("p");
+  detalhe.className = "modal-texto";
+  detalhe.textContent =
+    `“Somente esta ocorrência” altera apenas ${formatarData(dataISO)}. ` +
+    "“Toda a série” altera também os outros dias.";
+
+  const grupo = criarGrupoDeBotoes([
+    {
+      rotulo: "Cancelar",
+      classe: "botao-secundario",
+      aoClicar: () => modal.close()
+    },
+    {
+      rotulo: "Toda a série",
+      classe: "botao-secundario",
+      aoClicar: () => {
+        modal.close();
+        abrirFormularioDeEdicaoDaTarefa(estado, tarefa, dataISO);
+      }
+    },
+    {
+      rotulo: "Somente esta ocorrência",
+      classe: "botao-principal",
+      aoClicar: () => {
+        modal.close();
+        abrirFormularioDeEdicaoDaOcorrencia(estado, ocorrencia, dataISO);
+      }
+    }
+  ]);
+
+  conteudo.appendChild(texto);
+  conteudo.appendChild(detalhe);
+  conteudo.appendChild(grupo);
+
+  const modal = abrirModal({
+    titulo: "Editar tarefa recorrente",
+    conteudo
+  });
+}
+
+// Edita a definição da tarefa (ou a série inteira), com o formulário completo.
+function abrirFormularioDeEdicaoDaTarefa(estado, tarefa, dataISO) {
   const formulario = criarFormularioTarefa({
     categorias: estado.config.categoriasTarefas,
     valoresIniciais: tarefa,
@@ -280,11 +341,10 @@ function abrirEdicaoDeTarefa(estado, tarefa) {
       salvar(estado);
       modal.close();
 
-      // Nesta etapa, uma tarefa recorrente é editada como série inteira.
       // Se a edição mudou uma tarefa única de dia, avisamos que ela saiu da lista.
       const mensagem = ehRecorrente(tarefa)
         ? "Série atualizada!"
-        : tarefa.data === dataVisualizada
+        : tarefa.data === dataISO
           ? "Tarefa atualizada!"
           : `Tarefa movida para ${formatarData(tarefa.data)} — navegue até esse dia para vê-la.`;
       desenharTarefasDoDia(estado, mensagem);
@@ -298,8 +358,102 @@ function abrirEdicaoDeTarefa(estado, tarefa) {
   });
 }
 
-// Pede confirmação antes de excluir de vez.
-function confirmarExclusaoDeTarefa(estado, tarefa) {
+// Edita só o dia clicado. Data e repetição ficam fixas; o restante vira exceção.
+function abrirFormularioDeEdicaoDaOcorrencia(estado, ocorrencia, dataISO) {
+  const tarefa = ocorrencia.tarefaOriginal;
+  const formulario = criarFormularioTarefa({
+    categorias: estado.config.categoriasTarefas,
+    valoresIniciais: ocorrencia,
+    dataFixa: dataISO,
+    editarSomenteOcorrencia: true,
+    rotuloBotao: "Salvar nesta ocorrência",
+    aoSalvar: (campos) => {
+      ajustarOcorrencia(estado, tarefa.id, dataISO, campos);
+      salvar(estado);
+      modal.close();
+      desenharTarefasDoDia(
+        estado,
+        `Ocorrência de ${formatarData(dataISO)} atualizada! Os outros dias não mudaram.`
+      );
+    },
+    aoCancelar: () => modal.close()
+  });
+
+  const modal = abrirModal({
+    titulo: `Editar ocorrência de ${formatarData(dataISO)}`,
+    conteudo: formulario
+  });
+}
+
+// Ao excluir uma tarefa recorrente, pergunta se o usuário quer cancelar
+// só aquele dia (a série continua) ou apagar a série inteira.
+function confirmarExclusaoDeTarefa(estado, ocorrencia, dataISO) {
+  const tarefa = ocorrencia.tarefaOriginal ?? ocorrencia;
+
+  if (ehRecorrente(tarefa)) {
+    abrirEscolhaDeExclusao(estado, ocorrencia, dataISO);
+  } else {
+    abrirConfirmacaoDeExclusaoDaTarefa(estado, tarefa);
+  }
+}
+
+function abrirEscolhaDeExclusao(estado, ocorrencia, dataISO) {
+  const tarefa = ocorrencia.tarefaOriginal;
+  const conteudo = document.createElement("div");
+
+  const texto = document.createElement("p");
+  texto.className = "modal-texto";
+  texto.textContent = `“${ocorrencia.titulo}” se repete. O que fazer com ${formatarData(dataISO)}?`;
+
+  const detalhe = document.createElement("p");
+  detalhe.className = "modal-texto";
+  detalhe.textContent =
+    "Cancelar esta ocorrência remove só este dia; a série continua nos outros. " +
+    "Excluir a série remove todas as ocorrências e não pode ser desfeito.";
+
+  const grupo = criarGrupoDeBotoes([
+    {
+      rotulo: "Voltar",
+      classe: "botao-secundario",
+      aoClicar: () => modal.close()
+    },
+    {
+      rotulo: "Excluir a série inteira",
+      classe: "botao-perigo",
+      aoClicar: () => {
+        modal.close();
+        abrirConfirmacaoDeExclusaoDaTarefa(estado, tarefa);
+      }
+    },
+    {
+      rotulo: "Cancelar esta ocorrência",
+      classe: "botao-principal",
+      aoClicar: () => {
+        const tarefaAlterada = cancelarOcorrencia(estado, tarefa.id, dataISO);
+        if (tarefaAlterada === null) return;
+
+        salvar(estado);
+        modal.close();
+        desenharTarefasDoDia(
+          estado,
+          `Ocorrência de ${formatarData(dataISO)} cancelada. A série continua nos outros dias.`
+        );
+      }
+    }
+  ]);
+
+  conteudo.appendChild(texto);
+  conteudo.appendChild(detalhe);
+  conteudo.appendChild(grupo);
+
+  const modal = abrirModal({
+    titulo: "Cancelar ocorrência ou excluir série",
+    conteudo
+  });
+}
+
+// Pede confirmação antes de excluir de vez uma tarefa ou uma série.
+function abrirConfirmacaoDeExclusaoDaTarefa(estado, tarefa) {
   const recorrente = ehRecorrente(tarefa);
   const conteudo = document.createElement("div");
 
@@ -309,28 +463,24 @@ function confirmarExclusaoDeTarefa(estado, tarefa) {
     ? `Excluir a série “${tarefa.titulo}”? Todas as ocorrências serão removidas. Esta ação não pode ser desfeita.`
     : `Excluir a tarefa “${tarefa.titulo}”? Esta ação não pode ser desfeita.`;
 
-  const grupo = document.createElement("div");
-  grupo.className = "grupo-botoes";
+  const grupo = criarGrupoDeBotoes([
+    {
+      rotulo: "Cancelar",
+      classe: "botao-secundario",
+      aoClicar: () => modal.close()
+    },
+    {
+      rotulo: recorrente ? "Excluir série" : "Excluir",
+      classe: "botao-perigo",
+      aoClicar: () => {
+        excluirTarefa(estado, tarefa.id);
+        salvar(estado);
+        modal.close();
+        desenharTarefasDoDia(estado, recorrente ? "Série excluída." : "Tarefa excluída.");
+      }
+    }
+  ]);
 
-  const cancelar = document.createElement("button");
-  cancelar.type = "button";
-  cancelar.className = "botao-secundario";
-  cancelar.textContent = "Cancelar";
-  cancelar.addEventListener("click", () => modal.close());
-
-  const excluir = document.createElement("button");
-  excluir.type = "button";
-  excluir.className = "botao-perigo";
-  excluir.textContent = "Excluir";
-  excluir.addEventListener("click", () => {
-    excluirTarefa(estado, tarefa.id);
-    salvar(estado);
-    modal.close();
-    desenharTarefasDoDia(estado, recorrente ? "Série excluída." : "Tarefa excluída.");
-  });
-
-  grupo.appendChild(cancelar);
-  grupo.appendChild(excluir);
   conteudo.appendChild(texto);
   conteudo.appendChild(grupo);
 
@@ -338,6 +488,23 @@ function confirmarExclusaoDeTarefa(estado, tarefa) {
     titulo: recorrente ? "Excluir série" : "Excluir tarefa",
     conteudo
   });
+}
+
+// Cria o grupo de botões de um modal: cada item informa rótulo, classe e ação.
+function criarGrupoDeBotoes(botoes) {
+  const grupo = document.createElement("div");
+  grupo.className = "grupo-botoes";
+
+  for (const { rotulo, classe, aoClicar } of botoes) {
+    const botao = document.createElement("button");
+    botao.type = "button";
+    botao.className = classe;
+    botao.textContent = rotulo;
+    botao.addEventListener("click", aoClicar);
+    grupo.appendChild(botao);
+  }
+
+  return grupo;
 }
 
 // Botão de ação da tarefa (ícone + tooltip via aria-label)

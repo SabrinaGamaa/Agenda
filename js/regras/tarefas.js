@@ -91,7 +91,7 @@ export function encontrarTarefa(estado, tarefaId) {
 }
 
 // Uma tarefa está concluída quando existe a exceção "concluida" para aquela data.
-// (Tarefas únicas usam a própria data; as recorrências, na fase 3, vão usar cada ocorrência.)
+// Tarefas únicas usam a própria data; nas séries, cada ocorrência tem sua data.
 export function estaConcluida(tarefa, dataISO) {
   return tarefa.excecoes?.[dataISO]?.concluida === true;
 }
@@ -101,14 +101,90 @@ export function alternarConclusao(estado, tarefaId, dataISO) {
   const tarefa = encontrarTarefa(estado, tarefaId);
   if (tarefa === null) return null;
 
-  if (!tarefa.excecoes) {
-    tarefa.excecoes = {};
-  }
+  garantirExcecoes(tarefa);
 
   const concluidaAgora = !estaConcluida(tarefa, dataISO);
   tarefa.excecoes[dataISO] = { ...tarefa.excecoes[dataISO], concluida: concluidaAgora };
   tarefa.atualizadaEm = new Date().toISOString();
   return tarefa;
+}
+
+// Cancela uma ocorrência sem mexer na definição da série.
+// As demais datas continuam acontecendo normalmente.
+export function cancelarOcorrencia(estado, tarefaId, dataISO) {
+  const tarefa = encontrarTarefa(estado, tarefaId);
+  if (tarefa === null || !ocorrenciaExiste(tarefa, dataISO)) return null;
+
+  garantirExcecoes(tarefa);
+  tarefa.excecoes[dataISO] = { ...tarefa.excecoes[dataISO], cancelada: true };
+  tarefa.atualizadaEm = new Date().toISOString();
+  return tarefa;
+}
+
+// Ajusta os campos de uma ocorrência só naquela data.
+// Guardamos apenas o que difere da série: se o valor voltar ao original,
+// aquele ajuste é removido. A definição da série nunca é alterada.
+export function ajustarOcorrencia(estado, tarefaId, dataISO, campos) {
+  const tarefa = encontrarTarefa(estado, tarefaId);
+  if (tarefa === null || !ocorrenciaExiste(tarefa, dataISO)) return null;
+
+  garantirExcecoes(tarefa);
+  const excecao = { ...tarefa.excecoes[dataISO] };
+
+  for (const campo of CAMPOS_AJUSTAVEIS_NA_OCORRENCIA) {
+    if (!(campo in campos)) continue; // campo não enviado: mantém o ajuste atual
+
+    const valor = normalizarValorDoCampo(campo, campos[campo]);
+    const valorDaSerie = normalizarValorDoCampo(campo, tarefa[campo]);
+
+    if (valor === valorDaSerie) {
+      delete excecao[campo];
+    } else {
+      excecao[campo] = valor;
+    }
+  }
+
+  // Exceção vazia não precisa ser guardada (mantém o JSON limpo).
+  if (Object.keys(excecao).length === 0) {
+    delete tarefa.excecoes[dataISO];
+  } else {
+    tarefa.excecoes[dataISO] = excecao;
+  }
+
+  tarefa.atualizadaEm = new Date().toISOString();
+  return tarefa;
+}
+
+// A data existe na série? Inclui ocorrências já canceladas, para que
+// possamos ajustá-las ou consultá-las sem erro.
+function ocorrenciaExiste(tarefa, dataISO) {
+  return ocorrenciasNoPeriodo(tarefa, dataISO, dataISO, { incluirCanceladas: true }).length > 0;
+}
+
+// Garante o objeto de exceções em tarefas antigas, que podem não tê-lo.
+function garantirExcecoes(tarefa) {
+  if (!tarefa.excecoes || typeof tarefa.excecoes !== "object") {
+    tarefa.excecoes = {};
+  }
+}
+
+// Normaliza o valor antes de comparar com a série. É a mesma limpeza que
+// aplicarCampos faz: título sem espaços e descrição vazia vira null.
+function normalizarValorDoCampo(campo, valor) {
+  if (campo === "titulo") {
+    return String(valor ?? "").trim();
+  }
+
+  if (campo === "descricao") {
+    const texto = String(valor ?? "").trim();
+    return texto === "" ? null : texto;
+  }
+
+  if (campo === "duracaoMinutos") {
+    return Number(valor);
+  }
+
+  return valor;
 }
 
 // Atualiza os campos de uma tarefa existente.

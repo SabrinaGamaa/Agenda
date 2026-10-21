@@ -23,7 +23,9 @@ export function criarFormularioTarefa({
   valoresIniciais = null,
   rotuloBotao = "Adicionar tarefa",
   aoCancelar = null,
-  dataPadrao = null
+  dataPadrao = null,
+  dataFixa = null,
+  editarSomenteOcorrencia = false
 }) {
   const formulario = document.createElement("form");
   formulario.className = "formulario-tarefa";
@@ -170,6 +172,13 @@ export function criarFormularioTarefa({
     duracaoMinutos.value = "30";
   }
 
+  // Na edição de uma ocorrência, a data é a chave da exceção: não pode mudar.
+  // O formulário mostra o dia, mas o campo fica bloqueado.
+  if (editarSomenteOcorrencia) {
+    data.value = dataFixa ?? data.value;
+    data.disabled = true;
+  }
+
   // Preenche a recorrência existente. Se a tarefa é única, os controles
   // começam em "Não repete", "Nunca" e intervalo 1.
   const recorrenciaInicial = valoresIniciais?.recorrencia ?? null;
@@ -240,6 +249,12 @@ export function criarFormularioTarefa({
   blocoRecorrencia.appendChild(ajudaRecorrencia);
   blocoRecorrencia.appendChild(resumoRecorrencia);
 
+  // A regra de repetição pertence à série; ao editar só uma ocorrência,
+  // escondemos o bloco para deixar claro que ela não será alterada.
+  if (editarSomenteOcorrencia) {
+    blocoRecorrencia.hidden = true;
+  }
+
   // --- Mensagens (prévia do horário final, aviso e erros) ---
 
   const previa = document.createElement("p");
@@ -252,6 +267,16 @@ export function criarFormularioTarefa({
   const erro = document.createElement("p");
   erro.className = "erro-formulario campo-largo";
   erro.hidden = true;
+
+  // Explica, na edição de uma ocorrência, que a série não será alterada.
+  const notaOcorrencia = document.createElement("p");
+  notaOcorrencia.className = "recorrencia-ajuda campo-largo";
+  notaOcorrencia.hidden = !editarSomenteOcorrencia;
+  if (editarSomenteOcorrencia) {
+    notaOcorrencia.textContent =
+      `As alterações valem somente para ${formatarData(data.value)}. ` +
+      "A série continua igual nos outros dias.";
+  }
 
   // --- Botões ---
 
@@ -279,10 +304,14 @@ export function criarFormularioTarefa({
   formulario.appendChild(criarCampo("Descrição (opcional)", descricao, true));
   formulario.appendChild(criarCampo("Categoria", categoria));
   formulario.appendChild(criarCampo("Prioridade", prioridade));
-  formulario.appendChild(criarCampo("Data", data));
+  formulario.appendChild(criarCampo(
+    editarSomenteOcorrencia ? "Data (fixa nesta ocorrência)" : "Data",
+    data
+  ));
   formulario.appendChild(criarCampo("Horário de início *", horaInicio));
   formulario.appendChild(criarCampo("Duração (minutos) *", duracaoMinutos));
   formulario.appendChild(blocoRecorrencia);
+  formulario.appendChild(notaOcorrencia);
   formulario.appendChild(previa);
   formulario.appendChild(aviso);
   formulario.appendChild(erro);
@@ -501,9 +530,14 @@ export function criarFormularioTarefa({
       prioridade: prioridade.value,
       data: data.value,
       horaInicio: horaInicio.value,
-      duracaoMinutos: Number(duracaoMinutos.value),
-      recorrencia: montarRecorrencia()
+      duracaoMinutos: Number(duracaoMinutos.value)
     };
+
+    // Em "somente esta ocorrência" a recorrência nem é enviada: assim a
+    // regra da série não corre o risco de ser alterada sem querer.
+    if (!editarSomenteOcorrencia) {
+      campos.recorrencia = montarRecorrencia();
+    }
 
     const mensagensDeErro = validar(campos);
     if (campos.recorrencia) {
