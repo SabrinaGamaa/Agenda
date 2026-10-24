@@ -1,10 +1,12 @@
 # Meu Painel Pessoal
 
-Sistema web pessoal de organização, feito com **HTML, CSS e JavaScript puros** (sem frameworks), como projeto de aprendizagem. Reúne agenda/tarefas, metas e finanças em um só lugar.
+Sistema web pessoal de organização, feito com **HTML, CSS e JavaScript puros** (sem frameworks), como projeto de aprendizagem. Reúne agenda/tarefas, metas, finanças, contas fixas e projeções em um só lugar.
 
 O plano completo do projeto (fases, modelo de dados, regras e critérios de conclusão) está em [PLANO.md](PLANO.md).
 
 ## Situação atual
+
+**Fase 6 concluída — contas fixas e projeções.** A aba **Finanças** agora tem uma tela interna de **contas fixas** (aluguel, salário, internet etc.) com ativação/desativação, início/fim e exclusão segura (bloqueada quando há pagamentos). O card **Contas fixas do mês** mostra o previsto, o pago e o em aberto por competência; o pagamento gera um lançamento real vinculado, que é atualizado ou removido junto com o pagamento. Um segundo pagamento da mesma conta na mesma competência é bloqueado. O card **Projeção do próximo mês** separa **previsto** (contas fixas ativas + média variável de até 3 meses anteriores) e **realizado** (lançamentos com data no mês alvo), sem somar os dois; sem histórico, avisa “histórico insuficiente”.
 
 **Fase 5 concluída — finanças básicas.** A aba **Finanças** permite criar, editar e excluir receitas e despesas, com data, valor, categoria e descrição. A tela mostra o resumo do mês (receitas, despesas e saldo), a lista agrupada por dia com o saldo de cada dia, navegação ‹ › entre meses e o botão **Este mês**. Antes de gravar um possível duplicata (mesmo tipo, valor e data), o sistema pede confirmação. Os valores ficam em centavos e são exibidos em reais. A tela também mostra os **totais por categoria** (barras e percentuais de despesas e receitas) e a **comparação com o mês anterior**, com a variação em R$ e em %. O relatório mensal é conferido por um teste automatizado com 20 lançamentos fictícios.
 
@@ -60,7 +62,10 @@ Depois abra o endereço mostrado pelo comando (geralmente `http://localhost:3000
 10. **Metas**: clique na aba **Metas** no cabeçalho. Use **+ Nova meta** para criar uma meta pessoal, profissional ou financeira. Em uma meta financeira, preencha **Valor alvo** e **Valor atual**; o cartão mostra o percentual, quanto falta e a barra financeira. Edite pelo ícone ✎ e exclua pelo ícone 🗑 (com confirmação). Clique em **Detalhes** para abrir a meta, **adicionar etapas**, marcar/desmarcar as concluídas e excluir etapas; o progresso é recalculado na hora (ex.: 3 de 4 etapas = 75%). Metas pessoais e profissionais sem etapas usam o **progresso manual**. Para vincular uma tarefa, abra a aba **Agenda**, edite uma tarefa e escolha a meta em **Meta (opcional)**; a tarefa aparece nos detalhes da meta e pode ser desvinculada por lá. Tarefas vinculadas não alteram o progresso. Ao excluir a meta, as tarefas continuam na agenda, sem meta.
 11. **Finanças**: clique na aba **Finanças**. Use **+ Novo lançamento** para registrar uma despesa ou receita: escolha o tipo, a data, digite o valor no formato brasileiro (ex.: `1.234,56`), a categoria e a descrição. O resumo e a lista por dia são atualizados na hora. Edite pelo ícone ✎ e exclua pelo 🗑 (com confirmação). Navegue entre meses com ‹ › e volte com **Este mês**. Se tentar gravar um lançamento com o mesmo tipo, valor e data de outro, aparece o aviso de duplicata; só grava depois de **Gravar mesmo assim**.
 12. **Relatórios de Finanças**: no mês com lançamentos, confira **Por categoria** (barras, valores e percentuais de despesas e receitas) e **Comparação com o mês anterior** (valor atual, anterior e variação em R$ e %). Se o mês anterior não tiver movimento no grupo, aparece “sem base”; se os dois meses estiverem vazios, os cartões de relatório não aparecem.
-13. **Exportar/Importar**: menu **⋮** no cabeçalho → "Exportar JSON" / "Importar JSON".
-14. **Testes automatizados**: abra `http://localhost:5500/testes/testes.html` → "▶ Executar todos os testes" → veja ✅/❌ por suite.
-15. **Recarregue**: volta pro Home (visão Mês, mês de hoje); dados intactos.
-16. Console (`F12`): sem erros.
+13. **Contas fixas**: em Finanças, clique em **Contas fixas** no topo. Cadastre uma conta com nome, tipo, valor previsto, dia de vencimento, categoria, início e fim (opcional). Ative/desative pelo botão; exclua pelo 🗑 (contas com pagamentos não podem ser excluídas).
+14. **Contas do mês e pagamentos**: no card **Contas fixas do mês**, confira **Previsto**, **Pago** e **Em aberto**. Clique em **Pagar** para registrar valor e data; o lançamento vinculado aparece na lista. Use as ações do pagamento no card para editar ou excluir; o lançamento é sincronizado. Um segundo pagamento da mesma conta na mesma competência é bloqueado.
+15. **Projeção**: o card **Projeção do próximo mês** mostra **Previsto** (contas fixas ativas + média de até 3 meses anteriores) e **Realizado** (lançamentos com data no mês alvo) em blocos separados, sem somar os dois. Use **Ver [mês]** para abrir o mês projetado. Sem histórico variável, aparece o aviso de histórico insuficiente. Desativar uma conta muda o previsto.
+16. **Exportar/Importar**: menu **⋮** no cabeçalho → "Exportar JSON" / "Importar JSON".
+17. **Testes automatizados**: abra `http://localhost:5500/testes/testes.html` → "▶ Executar todos os testes" → veja ✅/❌ por suite.
+18. **Recarregue**: volta pro Home (visão Mês, mês de hoje); dados intactos.
+19. Console (`F12`): sem erros.

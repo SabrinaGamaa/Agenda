@@ -124,12 +124,12 @@ function mostrarSobre() {
       <button class="modal-fechar" aria-label="Fechar">×</button>
     </div>
     <p class="modal-texto">
-      <strong>Versão:</strong> Fase 5 concluída — finanças básicas<br>
+      <strong>Versão:</strong> Fase 6 concluída — contas fixas e projeções<br>
       <strong>Stack:</strong> HTML + CSS + JavaScript (ES Modules)<br>
       <strong>Armazenamento:</strong> localStorage<br>
       <strong>Tema:</strong> Escuro, minimalista, fonte Inter<br>
       <br>
-      Organizador pessoal com agenda, metas e finanças.
+      Organizador pessoal com agenda, metas, finanças, contas fixas e projeções.
       Feito como projeto de aprendizagem.
     </p>
     <div class="grupo-botoes">

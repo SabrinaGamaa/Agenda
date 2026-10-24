@@ -4,7 +4,7 @@
 // Convenções do modelo (PLANO.md §6 e §8):
 // - valores SEMPRE em centavos inteiros (R$ 12,34 -> 1234);
 // - datas como texto "AAAA-MM-DD"; competência como "AAAA-MM";
-// - receitas e despesas são lançamentos; a origem "pagamento" só será usada na Fase 6;
+// - receitas e despesas são lançamentos; a origem "pagamento" é usada pelas contas fixas;
 // - este módulo não decide quando salvar: só calcula e valida.
 
 export const TIPOS_LANCAMENTO = ["receita", "despesa"];

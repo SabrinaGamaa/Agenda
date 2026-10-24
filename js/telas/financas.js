@@ -1,5 +1,6 @@
-// Tela de finanças: resumo do mês, lançamentos agrupados por dia e CRUD.
-// As contas ficam em js/regras/financas.js; esta tela só monta a interface.
+// Tela de finanças: resumo do mês, lançamentos, contas fixas e projeção.
+// As regras ficam em js/regras/financas.js e js/regras/contas-fixas.js;
+// esta tela só monta a interface.
 
 import { hojeISO, formatarData } from "../regras/datas.js";
 import { formatarCentavos } from "../regras/dinheiro.js";
