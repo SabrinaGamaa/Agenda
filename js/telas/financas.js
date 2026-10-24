@@ -18,7 +18,15 @@ import {
   somarCompetencias,
   formatarCompetencia
 } from "../regras/financas.js";
+import {
+  contasDoMes,
+  resumoContasDoMes,
+  registrarPagamento,
+  atualizarPagamento,
+  excluirPagamento
+} from "../regras/contas-fixas.js";
 import { criarFormularioLancamento } from "../componentes/formulario-lancamento.js";
+import { criarFormularioPagamento } from "../componentes/formulario-pagamento.js";
 import { abrirModal } from "../componentes/modal.js";
 import { salvar } from "../dados/armazenamento.js";
 import { desenharContasFixas } from "./contas-fixas.js";
@@ -46,6 +54,7 @@ export function desenharFinancas(estado, mensagem = null) {
 
   conteudo.appendChild(criarPeriodo(estado));
   conteudo.appendChild(criarResumo(estado));
+  conteudo.appendChild(criarCartaoContasDoMes(estado));
 
   const relatorios = criarRelatorios(estado);
   if (relatorios) {
@@ -196,6 +205,251 @@ function criarCartaoResumo(rotulo, valorCentavos, classe, ajuda) {
   cartao.appendChild(valor);
   cartao.appendChild(ajudaElemento);
   return cartao;
+}
+
+// --- Contas fixas do mês ---
+
+// Card principal: mostra as contas vigentes na competência, o previsto, o pago
+// e o que ainda está em aberto. O pagamento gera um lançamento real; por isso
+// a edição e a exclusão ficam aqui, não na lista de lançamentos.
+function criarCartaoContasDoMes(estado) {
+  const cartao = document.createElement("section");
+  cartao.className = "cartao conta-mes";
+
+  const contas = contasDoMes(estado, competenciaAtual);
+  const resumo = resumoContasDoMes(estado, competenciaAtual);
+  const quantidadeCadastradas = (estado.contasFixas ?? []).length;
+
+  const cabecalho = document.createElement("div");
+  cabecalho.className = "conta-mes-cabecalho";
+
+  const titulo = document.createElement("h2");
+  titulo.textContent = "Contas fixas do mês";
+
+  const contagem = document.createElement("span");
+  contagem.className = "conta-mes-contagem";
+
+  if (quantidadeCadastradas === 0) {
+    contagem.textContent = "Nenhuma conta cadastrada";
+  } else if (contas.length === 0) {
+    contagem.textContent = "Nenhuma conta vigente";
+  } else {
+    const total = resumo.quantidade;
+    contagem.textContent =
+      `${resumo.quantidadePagas} de ${total} ${total === 1 ? "paga" : "pagas"}`;
+  }
+
+  cabecalho.appendChild(titulo);
+  cabecalho.appendChild(contagem);
+  cartao.appendChild(cabecalho);
+
+  if (quantidadeCadastradas === 0) {
+    cartao.appendChild(criarVazioContasDoMes(
+      "Nenhuma conta fixa cadastrada. Cadastre aluguel, salário, internet ou outra conta que se repete todo mês.",
+      "Cadastrar conta fixa",
+      estado
+    ));
+    return cartao;
+  }
+
+  if (contas.length === 0) {
+    cartao.appendChild(criarVazioContasDoMes(
+      `Nenhuma conta fixa vigente em ${formatarCompetencia(competenciaAtual).toLowerCase()}.`,
+      "Gerenciar contas fixas",
+      estado
+    ));
+    return cartao;
+  }
+
+  cartao.appendChild(criarResumoContasDoMes(contas, resumo));
+
+  const lista = document.createElement("ul");
+  lista.className = "financas-lista conta-mes-lista";
+
+  for (const conta of contas) {
+    lista.appendChild(criarItemContaDoMes(estado, conta));
+  }
+
+  cartao.appendChild(lista);
+
+  const rodape = document.createElement("div");
+  rodape.className = "conta-mes-rodape";
+
+  const gerenciar = document.createElement("button");
+  gerenciar.type = "button";
+  gerenciar.className = "botao-discreto";
+  gerenciar.textContent = "Gerenciar contas fixas";
+  gerenciar.addEventListener("click", () => abrirContasFixas(estado));
+  rodape.appendChild(gerenciar);
+
+  cartao.appendChild(rodape);
+  return cartao;
+}
+
+function criarVazioContasDoMes(texto, rotuloBotao, estado) {
+  const vazio = document.createElement("div");
+  vazio.className = "estado-vazio conta-mes-vazio";
+
+  const mensagem = document.createElement("p");
+  mensagem.textContent = texto;
+
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "botao-principal botao-pequeno";
+  botao.textContent = rotuloBotao;
+  botao.addEventListener("click", () => abrirContasFixas(estado));
+
+  vazio.appendChild(mensagem);
+  vazio.appendChild(botao);
+  return vazio;
+}
+
+function criarResumoContasDoMes(contas, resumo) {
+  const grade = document.createElement("div");
+  grade.className = "conta-mes-resumo";
+
+  grade.appendChild(criarBlocoResumoContas(
+    "Previsto",
+    resumo.saldoPrevistoCentavos,
+    "saldo das contas ativas na competência"
+  ));
+
+  grade.appendChild(criarBlocoResumoContas(
+    "Pago",
+    resumo.saldoPagoCentavos,
+    "saldo dos pagamentos"
+  ));
+
+  const pendentes = resumo.quantidadePendentes;
+  grade.appendChild(criarBlocoResumoContas(
+    "Em aberto",
+    calcularSaldoPendente(contas),
+    `${pendentes} ${pendentes === 1 ? "conta pendente" : "contas pendentes"}`
+  ));
+
+  return grade;
+}
+
+function criarBlocoResumoContas(rotulo, valorCentavos, ajuda) {
+  const bloco = document.createElement("div");
+  bloco.className = "conta-mes-resumo-item";
+
+  const rotuloElemento = document.createElement("span");
+  rotuloElemento.className = "conta-mes-resumo-rotulo";
+  rotuloElemento.textContent = rotulo;
+
+  const valor = document.createElement("strong");
+  valor.className = `conta-mes-resumo-valor${classeSaldo(valorCentavos)}`;
+  valor.textContent = formatarCentavos(valorCentavos);
+
+  const ajudaElemento = document.createElement("span");
+  ajudaElemento.className = "conta-mes-resumo-ajuda";
+  ajudaElemento.textContent = ajuda;
+
+  bloco.appendChild(rotuloElemento);
+  bloco.appendChild(valor);
+  bloco.appendChild(ajudaElemento);
+  return bloco;
+}
+
+// Soma somente as contas ainda não pagas: é o que falta realizar na competência.
+// Receitas entram positivas e despesas negativas, como no saldo do mês.
+function calcularSaldoPendente(contas) {
+  let total = 0;
+
+  for (const conta of contas) {
+    if (!conta.vigente || conta.pago) continue;
+
+    const valor = Number(conta.valorPrevistoCentavos) || 0;
+    total += conta.tipo === "receita" ? valor : -valor;
+  }
+
+  return total;
+}
+
+function criarItemContaDoMes(estado, conta) {
+  const tipo = conta.tipo === "receita" ? "receita" : "despesa";
+
+  const item = document.createElement("li");
+  item.className = `financas-item conta-mes-item ${tipo}`;
+  item.dataset.contaId = conta.id;
+
+  const info = document.createElement("div");
+  info.className = "financas-item-info";
+
+  const nome = document.createElement("strong");
+  nome.className = "financas-item-descricao";
+  nome.textContent = conta.nome ?? "Conta fixa";
+
+  const detalhes = document.createElement("span");
+  detalhes.className = "financas-item-detalhes";
+
+  const partes = [];
+  if (conta.ativa === false) partes.push("Inativa");
+  else if (!conta.vigente) partes.push("Fora do período");
+  if (conta.categoria) partes.push(conta.categoria);
+  if (conta.dataVencimento) {
+    partes.push(`vence ${formatarData(conta.dataVencimento)}`);
+  }
+
+  if (conta.pago && conta.pagamento) {
+    partes.push(`pago em ${formatarData(conta.pagamento.dataPagamento)}`);
+
+    if (conta.pagamento.valorPagoCentavos !== conta.valorPrevistoCentavos) {
+      partes.push(`valor pago ${formatarCentavos(conta.pagamento.valorPagoCentavos)}`);
+    }
+  }
+
+  detalhes.textContent = partes.join(" · ") || "Sem categoria";
+
+  info.appendChild(nome);
+  info.appendChild(detalhes);
+
+  const sinal = tipo === "receita" ? "+" : "−";
+
+  const valor = document.createElement("span");
+  valor.className = `financas-item-valor ${tipo}`;
+  valor.textContent = `${sinal} ${formatarCentavos(conta.valorPrevistoCentavos)}`;
+
+  const status = document.createElement("span");
+  status.className = `conta-mes-status ${conta.pago ? "pago" : "pendente"}`;
+  status.textContent = conta.pago ? "Pago" : "Em aberto";
+
+  const acoes = document.createElement("div");
+  acoes.className = "financas-item-acoes";
+
+  if (conta.pago && conta.pagamento) {
+    const nomeConta = conta.nome ?? "conta fixa";
+
+    acoes.appendChild(criarBotaoAcao(
+      "editar",
+      `Editar o pagamento de "${nomeConta}"`,
+      () => abrirFormularioEdicaoPagamento(estado, conta, conta.pagamento)
+    ));
+
+    acoes.appendChild(criarBotaoAcao(
+      "excluir",
+      `Excluir o pagamento de "${nomeConta}"`,
+      () => confirmarExclusaoPagamento(estado, conta, conta.pagamento)
+    ));
+  } else if (conta.vigente) {
+    const pagar = document.createElement("button");
+    pagar.type = "button";
+    pagar.className = "botao-principal botao-pequeno";
+    pagar.textContent = "Pagar";
+    pagar.addEventListener("click", () => abrirFormularioNovoPagamento(estado, conta));
+    acoes.appendChild(pagar);
+  }
+
+  item.appendChild(info);
+  item.appendChild(valor);
+  item.appendChild(status);
+
+  if (acoes.childElementCount > 0) {
+    item.appendChild(acoes);
+  }
+
+  return item;
 }
 
 // --- Relatórios do mês ---
@@ -576,21 +830,30 @@ function criarItemLancamento(estado, lancamento) {
   const acoes = document.createElement("div");
   acoes.className = "financas-item-acoes";
 
-  acoes.appendChild(criarBotaoAcao(
-    "editar",
-    `Editar o lançamento "${lancamento.descricao ?? "sem descrição"}"`,
-    () => abrirFormularioEdicaoLancamento(estado, lancamento)
-  ));
+  // Lançamentos gerados por pagamento são gerenciados no card de contas fixas.
+  // Não oferecemos edição/exclusão direta para manter pagamento e lançamento
+  // sempre sincronizados.
+  if (lancamento.origem !== "pagamento") {
+    acoes.appendChild(criarBotaoAcao(
+      "editar",
+      `Editar o lançamento "${lancamento.descricao ?? "sem descrição"}"`,
+      () => abrirFormularioEdicaoLancamento(estado, lancamento)
+    ));
 
-  acoes.appendChild(criarBotaoAcao(
-    "excluir",
-    `Excluir o lançamento "${lancamento.descricao ?? "sem descrição"}"`,
-    () => confirmarExclusao(estado, lancamento)
-  ));
+    acoes.appendChild(criarBotaoAcao(
+      "excluir",
+      `Excluir o lançamento "${lancamento.descricao ?? "sem descrição"}"`,
+      () => confirmarExclusao(estado, lancamento)
+    ));
+  }
 
   item.appendChild(info);
   item.appendChild(valor);
-  item.appendChild(acoes);
+
+  if (acoes.childElementCount > 0) {
+    item.appendChild(acoes);
+  }
+
   return item;
 }
 
@@ -623,6 +886,8 @@ function abrirFormularioNovoLancamento(estado) {
 }
 
 function abrirFormularioEdicaoLancamento(estado, lancamento) {
+  if (lancamento.origem === "pagamento") return;
+
   const formulario = criarFormularioLancamento({
     categorias: estado.config.categoriasFinancas,
     valoresIniciais: lancamento,
@@ -650,9 +915,124 @@ function abrirFormularioEdicaoLancamento(estado, lancamento) {
   formulario.querySelector("select, input")?.focus();
 }
 
+// --- Pagamentos de contas fixas ---
+
+function abrirFormularioNovoPagamento(estado, conta) {
+  const formulario = criarFormularioPagamento({
+    conta,
+    competencia: competenciaAtual,
+    dataPadrao: dataPadraoPagamento(conta),
+    aoSalvar: (campos) => {
+      const resultado = registrarPagamento(estado, {
+        contaFixaId: conta.id,
+        competencia: competenciaAtual,
+        ...campos
+      });
+
+      if (!resultado.sucesso) return resultado;
+
+      salvar(estado);
+      modal.close();
+      desenharFinancas(estado, "Pagamento registrado!");
+      return resultado;
+    },
+    aoCancelar: () => modal.close()
+  });
+
+  const modal = abrirModal({
+    titulo: "Pagar conta fixa",
+    conteudo: formulario
+  });
+
+  const campoValor = formulario.querySelector('input[inputmode="decimal"]');
+  campoValor?.focus();
+  campoValor?.select();
+}
+
+function abrirFormularioEdicaoPagamento(estado, conta, pagamento) {
+  const formulario = criarFormularioPagamento({
+    conta,
+    competencia: competenciaAtual,
+    valoresIniciais: pagamento,
+    rotuloBotao: "Salvar alterações",
+    aoSalvar: (campos) => {
+      const resultado = atualizarPagamento(estado, pagamento.id, campos);
+
+      if (!resultado.sucesso) return resultado;
+
+      salvar(estado);
+      modal.close();
+      desenharFinancas(estado, "Pagamento atualizado!");
+      return resultado;
+    },
+    aoCancelar: () => modal.close()
+  });
+
+  const modal = abrirModal({
+    titulo: "Editar pagamento",
+    conteudo: formulario
+  });
+
+  const campoValor = formulario.querySelector('input[inputmode="decimal"]');
+  campoValor?.focus();
+  campoValor?.select();
+}
+
+function confirmarExclusaoPagamento(estado, conta, pagamento) {
+  const conteudo = document.createElement("div");
+
+  const texto = document.createElement("p");
+  texto.className = "modal-texto";
+  texto.textContent =
+    `Excluir o pagamento de “${conta.nome ?? "conta fixa"}” ` +
+    `de ${formatarCentavos(pagamento.valorPagoCentavos)} em ${formatarData(pagamento.dataPagamento)}? ` +
+    "O lançamento vinculado também será removido. Esta ação não pode ser desfeita.";
+  conteudo.appendChild(texto);
+
+  const erro = document.createElement("p");
+  erro.className = "erro-formulario";
+  erro.hidden = true;
+  erro.setAttribute("role", "alert");
+  conteudo.appendChild(erro);
+
+  const grupo = criarGrupoDeBotoes([
+    {
+      rotulo: "Cancelar",
+      classe: "botao-secundario",
+      aoClicar: () => modal.close()
+    },
+    {
+      rotulo: "Excluir pagamento",
+      classe: "botao-perigo",
+      aoClicar: () => {
+        const resultado = excluirPagamento(estado, pagamento.id);
+
+        if (!resultado.sucesso) {
+          erro.textContent = resultado.erros.join(" ");
+          erro.hidden = false;
+          return;
+        }
+
+        salvar(estado);
+        modal.close();
+        desenharFinancas(estado, "Pagamento excluído.");
+      }
+    }
+  ]);
+
+  conteudo.appendChild(grupo);
+
+  const modal = abrirModal({
+    titulo: "Excluir pagamento",
+    conteudo
+  });
+}
+
 // --- Exclusão ---
 
 function confirmarExclusao(estado, lancamento) {
+  if (lancamento.origem === "pagamento") return;
+
   const conteudo = document.createElement("div");
 
   const texto = document.createElement("p");
@@ -662,15 +1042,6 @@ function confirmarExclusao(estado, lancamento) {
     `de ${formatarCentavos(lancamento.valorCentavos)} em ${formatarData(lancamento.data)}? ` +
     "Esta ação não pode ser desfeita.";
   conteudo.appendChild(texto);
-
-  if (lancamento.origem === "pagamento") {
-    const aviso = document.createElement("p");
-    aviso.className = "modal-texto";
-    aviso.textContent =
-      "Este lançamento foi gerado por um pagamento de conta fixa. " +
-      "Excluir aqui não altera o pagamento.";
-    conteudo.appendChild(aviso);
-  }
 
   const grupo = criarGrupoDeBotoes([
     {
@@ -704,6 +1075,14 @@ function confirmarExclusao(estado, lancamento) {
 function dataPadraoDoMes() {
   const hoje = hojeISO();
   return competenciaDaData(hoje) === competenciaAtual ? hoje : `${competenciaAtual}-01`;
+}
+
+// No mês atual, o pagamento começa com a data de hoje; em outro mês, com o
+// vencimento da conta (o usuário pode ajustar para a data real).
+function dataPadraoPagamento(conta) {
+  const hoje = hojeISO();
+  if (competenciaDaData(hoje) === competenciaAtual) return hoje;
+  return conta.dataVencimento ?? `${competenciaAtual}-01`;
 }
 
 // "2026-10-24" -> "24/10/2026 · sábado"
