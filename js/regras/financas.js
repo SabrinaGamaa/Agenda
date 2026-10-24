@@ -340,7 +340,8 @@ function compararValores(atualCentavos, anteriorCentavos) {
   };
 }
 
-function competenciaValida(competencia) {
+// Exportada para os outros módulos financeiros usarem a mesma validação.
+export function competenciaValida(competencia) {
   if (typeof competencia !== "string" || !/^\d{4}-\d{2}$/.test(competencia)) {
     return false;
   }
@@ -350,7 +351,7 @@ function competenciaValida(competencia) {
 }
 
 // Confere formato e existência real da data (rejeita 31/02, por exemplo).
-function dataValida(dataISO) {
+export function dataValida(dataISO) {
   if (typeof dataISO !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dataISO)) {
     return false;
   }
