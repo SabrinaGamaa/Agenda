@@ -148,11 +148,33 @@ export function lancamentosDoMes(estado, competencia) {
 
 // Resumo de uma competência: receitas, despesas, saldo e quantidade.
 export function resumoDoMes(estado, competencia) {
+  return {
+    competencia,
+    ...totalizar(lancamentosDoMes(estado, competencia))
+  };
+}
+
+// Resumo de um único dia (relatório diário).
+// Data inválida devolve zeros com `data: null`.
+export function resumoDoDia(estado, dataISO) {
+  if (!dataValida(dataISO)) {
+    return { data: null, ...totalizar([]) };
+  }
+
+  const lancamentos = (estado.lancamentos ?? [])
+    .filter((item) => item.data === dataISO);
+
+  return { data: dataISO, ...totalizar(lancamentos) };
+}
+
+// Soma receitas e despesas de uma lista de lançamentos.
+// Valores inválidos (backup antigo) contam como zero.
+function totalizar(lancamentos) {
   let receitasCentavos = 0;
   let despesasCentavos = 0;
   let quantidadeLancamentos = 0;
 
-  for (const item of lancamentosDoMes(estado, competencia)) {
+  for (const item of lancamentos) {
     const valor = valorSeguro(item.valorCentavos);
     quantidadeLancamentos++;
 
@@ -164,7 +186,6 @@ export function resumoDoMes(estado, competencia) {
   }
 
   return {
-    competencia,
     receitasCentavos,
     despesasCentavos,
     saldoCentavos: receitasCentavos - despesasCentavos,

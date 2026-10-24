@@ -55,6 +55,10 @@
   --critico-suave: rgba(139,42,42,.15);
   --critico-forte: #a03030;
 
+  /* Finanças: verde para receitas e vermelho suave para despesas (texto) */
+  --receita:      #4ade80;
+  --despesa:      #f87171;
+
   /* Prioridades (usam acento + critico + um azul petróleo) */
   --prio-alta:    #8b2a2a;
   --prio-media:   #6b46c1;
@@ -349,6 +353,13 @@ a:hover { text-decoration: underline; }
   margin-top: 0;
 }
 
+.formulario-lancamento {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-pequeno);
+  margin-top: 0;
+}
+
 .campo {
   display: flex;
   flex-direction: column;
@@ -369,7 +380,9 @@ a:hover { text-decoration: underline; }
 .formulario-tarefa select,
 .formulario-meta input,
 .formulario-meta select,
-.formulario-meta textarea {
+.formulario-meta textarea,
+.formulario-lancamento input,
+.formulario-lancamento select {
   font: inherit;
   padding: 10px 12px;
   border: 1px solid var(--borda);
@@ -386,7 +399,8 @@ a:hover { text-decoration: underline; }
 
 .formulario-tarefa input::placeholder,
 .formulario-meta input::placeholder,
-.formulario-meta textarea::placeholder {
+.formulario-meta textarea::placeholder,
+.formulario-lancamento input::placeholder {
   color: var(--texto-fraco);
 }
 
@@ -394,7 +408,9 @@ a:hover { text-decoration: underline; }
 .formulario-tarefa select:focus,
 .formulario-meta input:focus,
 .formulario-meta select:focus,
-.formulario-meta textarea:focus {
+.formulario-meta textarea:focus,
+.formulario-lancamento input:focus,
+.formulario-lancamento select:focus {
   outline: none;
   border-color: var(--acento);
   box-shadow: 0 0 0 3px var(--acento-suave);
@@ -424,7 +440,8 @@ a:hover { text-decoration: underline; }
 
 /* O atributo hidden precisa vencer o display:flex de .campo. */
 .formulario-tarefa [hidden],
-.formulario-meta [hidden] { display: none !important; }
+.formulario-meta [hidden],
+.formulario-lancamento [hidden] { display: none !important; }
 
 /* --- Bloco de repetição --- */
 .recorrencia {
@@ -561,7 +578,8 @@ a:hover { text-decoration: underline; }
 
 @media (max-width: 560px) {
   .formulario-tarefa,
-  .formulario-meta { grid-template-columns: 1fr; }
+  .formulario-meta,
+  .formulario-lancamento { grid-template-columns: 1fr; }
   .recorrencia-grade,
   .meta-financeiro-grade { grid-template-columns: 1fr; }
 }
@@ -612,7 +630,8 @@ a:hover { text-decoration: underline; }
 .modal-texto { margin: 0 0 var(--espaco); color: var(--texto-suave); }
 
 .modal .formulario-tarefa,
-.modal .formulario-meta { margin-top: 0; }
+.modal .formulario-meta,
+.modal .formulario-lancamento { margin-top: 0; }
 
 /* ==========================================================================
    LISTA DE TAREFAS (tela de dia)
@@ -1484,6 +1503,296 @@ a:hover { text-decoration: underline; }
 
   .tarefa-meta .botao-discreto {
     align-self: flex-end;
+  }
+}
+
+/* ==========================================================================
+   FINANÇAS
+   ========================================================================== */
+.financas-barra {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco);
+  flex-wrap: wrap;
+  margin-bottom: var(--espaco);
+}
+
+.financas-titulo {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.financas-subtitulo {
+  margin: 4px 0 0;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+}
+
+/* Navegação de mês */
+.financas-periodo {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-pequeno);
+  width: fit-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+  padding: 4px 6px;
+  margin-bottom: var(--espaco);
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+}
+
+.financas-mes {
+  min-width: 190px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Resumo: receitas, despesas e saldo */
+.financas-resumo {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--espaco);
+  margin-bottom: var(--espaco);
+}
+
+.financas-resumo-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--espaco);
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-top: 2px solid var(--borda-forte);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.financas-resumo-card.receitas { border-top-color: var(--receita); }
+.financas-resumo-card.despesas { border-top-color: var(--despesa); }
+.financas-resumo-card.saldo { border-top-color: var(--acento); }
+
+.financas-resumo-rotulo {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--texto-fraco);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.financas-resumo-valor {
+  font-size: 1.35rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.financas-resumo-card.receitas .financas-resumo-valor { color: var(--receita); }
+.financas-resumo-card.despesas .financas-resumo-valor { color: var(--despesa); }
+.financas-resumo-card.saldo.positivo .financas-resumo-valor { color: var(--receita); }
+.financas-resumo-card.saldo.negativo .financas-resumo-valor { color: var(--despesa); }
+
+.financas-resumo-ajuda {
+  font-size: 0.75rem;
+  color: var(--texto-fraco);
+}
+
+/* Lista agrupada por dia */
+.financas-ajuda {
+  margin: 0 0 var(--espaco);
+  font-size: 0.8rem;
+  color: var(--texto-fraco);
+  line-height: 1.4;
+}
+
+.financas-grupo {
+  margin-bottom: var(--espaco);
+}
+
+.financas-grupo:last-child {
+  margin-bottom: 0;
+}
+
+.financas-grupo-cabecalho {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espaco-pequeno);
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--borda);
+}
+
+.financas-grupo-data {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  text-transform: capitalize;
+}
+
+.financas-grupo-total {
+  font-size: 0.8rem;
+  color: var(--texto-fraco);
+  font-variant-numeric: tabular-nums;
+}
+
+.financas-grupo-total.positivo { color: var(--receita); }
+.financas-grupo-total.negativo { color: var(--despesa); }
+
+.financas-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.financas-item {
+  display: flex;
+  align-items: center;
+  gap: var(--espaco-pequeno);
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--borda);
+  border-left: 2px solid var(--borda-forte);
+  border-radius: var(--raio-pequeno);
+  transition: border-color .15s ease;
+}
+
+.financas-item:hover {
+  border-top-color: var(--borda-forte);
+  border-right-color: var(--borda-forte);
+  border-bottom-color: var(--borda-forte);
+}
+.financas-item.receita { border-left-color: var(--receita); }
+.financas-item.despesa { border-left-color: var(--despesa); }
+
+.financas-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.financas-item-descricao {
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.financas-item-detalhes {
+  font-size: 0.75rem;
+  color: var(--texto-fraco);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.financas-item-valor {
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.financas-item-valor.receita { color: var(--receita); }
+.financas-item-valor.despesa { color: var(--despesa); }
+
+.financas-item-acoes {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity .15s ease;
+}
+
+.financas-item:hover .financas-item-acoes { opacity: 1; }
+.financas-item:focus-within .financas-item-acoes { opacity: 1; }
+
+@media (hover: none) {
+  .financas-item-acoes { opacity: 1; }
+}
+
+.financas-item-acoes .botao-icone {
+  width: 32px;
+  height: 32px;
+}
+
+.financas-item-acoes .botao-icone::before {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.financas-item-acoes .botao-icone[data-acao="editar"]::before { content: "✎"; }
+.financas-item-acoes .botao-icone[data-acao="excluir"]::before {
+  content: "🗑";
+  color: var(--critico);
+}
+.financas-item-acoes .botao-icone[data-acao="excluir"]:hover {
+  background: var(--critico-suave);
+}
+
+/* Aviso de duplicata dentro do formulário */
+.aviso-duplicata {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-pequeno);
+  padding: 12px;
+  background: var(--acento-suave);
+  border: 1px solid rgba(107,70,193,.4);
+  border-radius: var(--raio-pequeno);
+}
+
+.aviso-duplicata p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--texto);
+  line-height: 1.4;
+}
+
+@media (max-width: 700px) {
+  .financas-resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .financas-barra {
+    align-items: stretch;
+  }
+
+  .financas-barra .botao-principal {
+    width: 100%;
+  }
+
+  .financas-periodo {
+    width: 100%;
+  }
+
+  .financas-mes {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .financas-item {
+    flex-wrap: wrap;
+  }
+
+  .financas-item-info {
+    flex: 1 1 100%;
+  }
+
+  .financas-item-acoes {
+    opacity: 1;
+    margin-left: auto;
   }
 }
 

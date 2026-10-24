@@ -1,10 +1,11 @@
-// Componente: navegação principal entre Agenda e Metas.
+// Componente: navegação principal entre Agenda, Metas e Finanças.
 // São botões (não links) porque a troca de tela acontece em memória, sem recarregar.
 // O visual é parecido com o alternador Mês | Semana, para manter a consistência.
 
 const ABAS = [
   { id: "agenda", rotulo: "Agenda" },
-  { id: "metas", rotulo: "Metas" }
+  { id: "metas", rotulo: "Metas" },
+  { id: "financas", rotulo: "Finanças" }
 ];
 
 export function criarNavegacao({ abaAtual = "agenda", aoMudar = null } = {}) {

@@ -9,6 +9,7 @@ import {
   validarLancamento,
   lancamentosDoMes,
   resumoDoMes,
+  resumoDoDia,
   totaisPorCategoria,
   compararComMesAnterior,
   possivelDuplicata,
@@ -223,6 +224,35 @@ describe("finanças — relatórios", (suite) => {
     ]);
 
     Assert.equals(resumoDoMes(estado, "2026-10").despesasCentavos, 250);
+  });
+
+  suite.test("resumoDoDia soma só o dia escolhido", (Assert) => {
+    const estado = criarEstado([
+      criarLancamentoFalso({ tipo: "receita", data: "2026-10-10", valorCentavos: 500 }),
+      criarLancamentoFalso({ tipo: "despesa", data: "2026-10-10", valorCentavos: 200 }),
+      criarLancamentoFalso({ tipo: "despesa", data: "2026-10-11", valorCentavos: 999 })
+    ]);
+
+    const resumo = resumoDoDia(estado, "2026-10-10");
+    Assert.equals(resumo.data, "2026-10-10");
+    Assert.equals(resumo.receitasCentavos, 500);
+    Assert.equals(resumo.despesasCentavos, 200);
+    Assert.equals(resumo.saldoCentavos, 300);
+    Assert.equals(resumo.quantidadeLancamentos, 2);
+
+    const vazio = resumoDoDia(estado, "2026-10-12");
+    Assert.equals(vazio.saldoCentavos, 0);
+    Assert.equals(vazio.quantidadeLancamentos, 0);
+  });
+
+  suite.test("resumoDoDia recusa data inválida", (Assert) => {
+    const estado = criarEstado([criarLancamentoFalso()]);
+    const resumo = resumoDoDia(estado, "2026-02-31");
+
+    Assert.equals(resumo.data, null);
+    Assert.equals(resumo.receitasCentavos, 0);
+    Assert.equals(resumo.despesasCentavos, 0);
+    Assert.equals(resumo.quantidadeLancamentos, 0);
   });
 
   suite.test("totaisPorCategoria agrupa, soma e ordena", (Assert) => {
