@@ -224,6 +224,24 @@ export function totaisPorCategoria(estado, competencia, tipo = null) {
   });
 }
 
+// Percentual de `valorCentavos` dentro de `totalCentavos`, com uma casa decimal.
+// Devolve null quando não há base válida (total zero/negativo ou valor inválido).
+export function percentualDoTotal(valorCentavos, totalCentavos) {
+  const valor = Number(valorCentavos);
+  const total = Number(totalCentavos);
+
+  if (
+    !Number.isFinite(valor) ||
+    !Number.isFinite(total) ||
+    valor < 0 ||
+    total <= 0
+  ) {
+    return null;
+  }
+
+  return Math.round((valor / total) * 1000) / 10;
+}
+
 // Compara uma competência com a anterior, em R$ e em %.
 // Devolve null se a competência for inválida.
 //

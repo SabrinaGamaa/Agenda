@@ -11,6 +11,7 @@ import {
   resumoDoMes,
   resumoDoDia,
   totaisPorCategoria,
+  percentualDoTotal,
   compararComMesAnterior,
   possivelDuplicata,
   competenciaDaData,
@@ -358,6 +359,112 @@ describe("finanças — relatórios", (suite) => {
     Assert.equals(comparacao.saldo.atualCentavos, -10000);
     Assert.equals(comparacao.saldo.diferencaCentavos, 10000);
     Assert.equals(comparacao.saldo.percentual, 50, "melhora de 50% sobre a base absoluta");
+  });
+
+  suite.test("percentualDoTotal calcula a participação com uma casa", (Assert) => {
+    Assert.equals(percentualDoTotal(500, 1000), 50);
+    Assert.equals(percentualDoTotal(1, 3), 33.3);
+    Assert.equals(percentualDoTotal(2, 3), 66.7);
+    Assert.equals(percentualDoTotal(0, 1000), 0);
+    Assert.equals(percentualDoTotal(500, 0), null, "sem total não há percentual");
+    Assert.equals(percentualDoTotal(-1, 1000), null, "valor negativo não participa");
+  });
+
+  suite.test("relatório de 20 lançamentos confere com a conferência manual", (Assert) => {
+    // Outubro tem exatamente 20 lançamentos, com valores escolhidos para conferir na mão:
+    // receitas: 3.500,00 + 1.250,50 + 45,90 = 4.796,40
+    // despesas: 3.454,73
+    // saldo: 1.341,67
+    const outubro = [
+      { tipo: "receita", data: "2026-10-05", valorCentavos: 350000, categoria: "Outros", descricao: "Salário" },
+      { tipo: "receita", data: "2026-10-12", valorCentavos: 125050, categoria: "Outros", descricao: "Freelance" },
+      { tipo: "receita", data: "2026-10-20", valorCentavos: 4590, categoria: "Outros", descricao: "Venda" },
+      { tipo: "despesa", data: "2026-10-05", valorCentavos: 120000, categoria: "Moradia", descricao: "Aluguel" },
+      { tipo: "despesa", data: "2026-10-05", valorCentavos: 45000, categoria: "Moradia", descricao: "Condomínio" },
+      { tipo: "despesa", data: "2026-10-10", valorCentavos: 18735, categoria: "Moradia", descricao: "Luz" },
+      { tipo: "despesa", data: "2026-10-10", valorCentavos: 9990, categoria: "Moradia", descricao: "Internet" },
+      { tipo: "despesa", data: "2026-10-06", valorCentavos: 45678, categoria: "Alimentação", descricao: "Mercado" },
+      { tipo: "despesa", data: "2026-10-13", valorCentavos: 12345, categoria: "Alimentação", descricao: "Feira" },
+      { tipo: "despesa", data: "2026-10-13", valorCentavos: 1890, categoria: "Alimentação", descricao: "Padaria" },
+      { tipo: "despesa", data: "2026-10-07", valorCentavos: 25000, categoria: "Transporte", descricao: "Combustível" },
+      { tipo: "despesa", data: "2026-10-08", valorCentavos: 450, categoria: "Transporte", descricao: "Ônibus" },
+      { tipo: "despesa", data: "2026-10-09", valorCentavos: 7890, categoria: "Saúde", descricao: "Farmácia" },
+      { tipo: "despesa", data: "2026-10-15", valorCentavos: 20000, categoria: "Saúde", descricao: "Consulta" },
+      { tipo: "despesa", data: "2026-10-16", valorCentavos: 3500, categoria: "Lazer", descricao: "Cinema" },
+      { tipo: "despesa", data: "2026-10-17", valorCentavos: 3990, categoria: "Lazer", descricao: "Streaming" },
+      { tipo: "despesa", data: "2026-10-18", valorCentavos: 5990, categoria: "Lazer", descricao: "Livro" },
+      { tipo: "despesa", data: "2026-10-19", valorCentavos: 15000, categoria: "Outros", descricao: "Presente" },
+      { tipo: "despesa", data: "2026-10-21", valorCentavos: 1250, categoria: "Alimentação", descricao: "Café" },
+      { tipo: "despesa", data: "2026-10-22", valorCentavos: 8765, categoria: "Outros", descricao: "Material" }
+    ].map((item) => criarLancamentoFalso(item));
+
+    // Setembro serve de base para a comparação:
+    // receitas 4.800,00; despesas 1.750,00; saldo 3.050,00.
+    const setembro = [
+      { tipo: "receita", data: "2026-09-05", valorCentavos: 400000, categoria: "Outros", descricao: "Salário" },
+      { tipo: "receita", data: "2026-09-20", valorCentavos: 80000, categoria: "Outros", descricao: "Freelance" },
+      { tipo: "despesa", data: "2026-09-05", valorCentavos: 120000, categoria: "Moradia", descricao: "Aluguel" },
+      { tipo: "despesa", data: "2026-09-10", valorCentavos: 40000, categoria: "Alimentação", descricao: "Mercado" },
+      { tipo: "despesa", data: "2026-09-15", valorCentavos: 15000, categoria: "Lazer", descricao: "Lazer" }
+    ].map((item) => criarLancamentoFalso(item));
+
+    const estado = criarEstado([...setembro, ...outubro]);
+
+    const resumo = resumoDoMes(estado, "2026-10");
+    Assert.equals(resumo.quantidadeLancamentos, 20);
+    Assert.equals(resumo.receitasCentavos, 479640);
+    Assert.equals(resumo.despesasCentavos, 345473);
+    Assert.equals(resumo.saldoCentavos, 134167);
+
+    const dia5 = resumoDoDia(estado, "2026-10-05");
+    Assert.equals(dia5.receitasCentavos, 350000);
+    Assert.equals(dia5.despesasCentavos, 165000);
+    Assert.equals(dia5.saldoCentavos, 185000);
+    Assert.equals(dia5.quantidadeLancamentos, 3);
+
+    const despesas = totaisPorCategoria(estado, "2026-10", "despesa");
+    Assert.deepEquals(
+      despesas.map((item) => [item.categoria, item.totalCentavos, item.quantidade]),
+      [
+        ["Moradia", 193725, 4],
+        ["Alimentação", 61163, 4],
+        ["Saúde", 27890, 2],
+        ["Transporte", 25450, 2],
+        ["Outros", 23765, 2],
+        ["Lazer", 13480, 3]
+      ]
+    );
+    Assert.equals(
+      percentualDoTotal(despesas[0].totalCentavos, resumo.despesasCentavos),
+      56.1
+    );
+
+    const receitas = totaisPorCategoria(estado, "2026-10", "receita");
+    Assert.deepEquals(
+      receitas.map((item) => [item.categoria, item.totalCentavos, item.quantidade]),
+      [["Outros", 479640, 3]]
+    );
+
+    const comparacao = compararComMesAnterior(estado, "2026-10");
+    Assert.equals(comparacao.receitas.anteriorCentavos, 480000);
+    Assert.equals(comparacao.receitas.diferencaCentavos, -360);
+    Assert.equals(comparacao.receitas.percentual, -0.1);
+    Assert.equals(comparacao.despesas.anteriorCentavos, 175000);
+    Assert.equals(comparacao.despesas.diferencaCentavos, 170473);
+    Assert.equals(comparacao.despesas.percentual, 97.4);
+    Assert.equals(comparacao.saldo.anteriorCentavos, 305000);
+    Assert.equals(comparacao.saldo.diferencaCentavos, -170833);
+    Assert.equals(comparacao.saldo.percentual, -56);
+
+    const totalDespesas = despesas.reduce(
+      (soma, item) => soma + item.totalCentavos,
+      0
+    );
+    Assert.equals(
+      totalDespesas,
+      resumo.despesasCentavos,
+      "as categorias fecham com o total do mês"
+    );
   });
 });
 

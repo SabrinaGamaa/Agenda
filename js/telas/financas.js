@@ -10,6 +10,9 @@ import {
   lancamentosDoMes,
   resumoDoMes,
   resumoDoDia,
+  totaisPorCategoria,
+  percentualDoTotal,
+  compararComMesAnterior,
   possivelDuplicata,
   competenciaDaData,
   somarCompetencias,
@@ -42,6 +45,12 @@ export function desenharFinancas(estado, mensagem = null) {
 
   conteudo.appendChild(criarPeriodo(estado));
   conteudo.appendChild(criarResumo(estado));
+
+  const relatorios = criarRelatorios(estado);
+  if (relatorios) {
+    conteudo.appendChild(relatorios);
+  }
+
   conteudo.appendChild(criarCartaoLista(estado));
 }
 
@@ -167,6 +176,272 @@ function criarCartaoResumo(rotulo, valorCentavos, classe, ajuda) {
   cartao.appendChild(valor);
   cartao.appendChild(ajudaElemento);
   return cartao;
+}
+
+// --- Relatórios do mês ---
+
+// Monta os cartões de categoria e comparação somente quando há algo para mostrar.
+// Se o mês atual e o anterior estão vazios, a tela fica limpa (só o estado vazio).
+function criarRelatorios(estado) {
+  const comparacao = compararComMesAnterior(estado, competenciaAtual);
+  if (comparacao === null) return null;
+
+  const resumo = resumoDoMes(estado, competenciaAtual);
+  const anteriorTemMovimento =
+    comparacao.receitas.anteriorCentavos !== 0 ||
+    comparacao.despesas.anteriorCentavos !== 0;
+
+  if (resumo.quantidadeLancamentos === 0 && !anteriorTemMovimento) {
+    return null;
+  }
+
+  const despesas = totaisPorCategoria(estado, competenciaAtual, "despesa")
+    .filter((item) => item.totalCentavos > 0);
+  const receitas = totaisPorCategoria(estado, competenciaAtual, "receita")
+    .filter((item) => item.totalCentavos > 0);
+
+  const grade = document.createElement("div");
+  grade.className = "financas-relatorios";
+
+  if (despesas.length > 0 || receitas.length > 0) {
+    grade.appendChild(criarCartaoCategorias({ despesas, receitas, resumo }));
+  }
+
+  grade.appendChild(criarCartaoComparacao(comparacao));
+  return grade;
+}
+
+function criarCartaoCategorias({ despesas, receitas, resumo }) {
+  const cartao = document.createElement("section");
+  cartao.className = "cartao financas-relatorio";
+
+  const titulo = document.createElement("h2");
+  titulo.textContent = "Por categoria";
+
+  const ajuda = document.createElement("p");
+  ajuda.className = "financas-relatorio-ajuda";
+  ajuda.textContent =
+    "Participação de cada categoria no total de despesas ou receitas do mês.";
+
+  cartao.appendChild(titulo);
+  cartao.appendChild(ajuda);
+
+  if (despesas.length > 0) {
+    cartao.appendChild(criarBlocoCategorias(
+      "despesas",
+      despesas,
+      resumo.despesasCentavos
+    ));
+  }
+
+  if (receitas.length > 0) {
+    cartao.appendChild(criarBlocoCategorias(
+      "receitas",
+      receitas,
+      resumo.receitasCentavos
+    ));
+  }
+
+  return cartao;
+}
+
+function criarBlocoCategorias(tipo, itens, totalCentavos) {
+  const bloco = document.createElement("section");
+  bloco.className = "financas-categoria-bloco";
+
+  const titulo = document.createElement("h3");
+  titulo.className = `financas-categoria-titulo ${tipo}`;
+  titulo.textContent = tipo === "despesas" ? "Despesas" : "Receitas";
+
+  const lista = document.createElement("ul");
+  lista.className = "financas-categoria-lista";
+
+  for (const item of itens) {
+    lista.appendChild(criarItemCategoria(item, totalCentavos, tipo));
+  }
+
+  bloco.appendChild(titulo);
+  bloco.appendChild(lista);
+  return bloco;
+}
+
+function criarItemCategoria(item, totalCentavos, tipo) {
+  const percentual = percentualDoTotal(item.totalCentavos, totalCentavos) ?? 0;
+
+  const elemento = document.createElement("li");
+  elemento.className = `financas-categoria-item ${item.tipo}`;
+
+  const topo = document.createElement("div");
+  topo.className = "financas-categoria-topo";
+
+  const nome = document.createElement("span");
+  nome.className = "financas-categoria-nome";
+  nome.textContent = item.categoria;
+
+  const valor = document.createElement("span");
+  valor.className = "financas-categoria-valor";
+  valor.textContent = formatarCentavos(item.totalCentavos);
+
+  topo.appendChild(nome);
+  topo.appendChild(valor);
+
+  const barra = document.createElement("div");
+  barra.className = "financas-categoria-barra";
+  barra.setAttribute("aria-hidden", "true");
+
+  const preenchimento = document.createElement("span");
+  preenchimento.style.width =
+    `${Math.min(Math.max(percentual, 1), 100)}%`;
+  barra.appendChild(preenchimento);
+
+  const detalhe = document.createElement("div");
+  detalhe.className = "financas-categoria-detalhe";
+
+  const participacao = document.createElement("span");
+  participacao.textContent = `${formatarPercentual(percentual)}% das ${tipo}`;
+
+  const quantidade = document.createElement("span");
+  quantidade.textContent =
+    `${item.quantidade} ${item.quantidade === 1 ? "lançamento" : "lançamentos"}`;
+
+  detalhe.appendChild(participacao);
+  detalhe.appendChild(quantidade);
+
+  elemento.appendChild(topo);
+  elemento.appendChild(barra);
+  elemento.appendChild(detalhe);
+  return elemento;
+}
+
+function criarCartaoComparacao(comparacao) {
+  const cartao = document.createElement("section");
+  cartao.className = "cartao financas-relatorio";
+
+  const titulo = document.createElement("h2");
+  titulo.textContent = "Comparação com o mês anterior";
+
+  const ajuda = document.createElement("p");
+  ajuda.className = "financas-relatorio-ajuda";
+  ajuda.textContent =
+    `Contra ${formatarCompetencia(comparacao.competenciaAnterior).toLowerCase()}.`;
+
+  const lista = document.createElement("ul");
+  lista.className = "financas-comparacao-lista";
+
+  const linhas = [
+    { rotulo: "Receitas", bloco: comparacao.receitas, tipo: "receitas" },
+    { rotulo: "Despesas", bloco: comparacao.despesas, tipo: "despesas" },
+    { rotulo: "Saldo", bloco: comparacao.saldo, tipo: "saldo" }
+  ];
+
+  let temSemBase = false;
+
+  for (const linha of linhas) {
+    if (linha.bloco.percentual === null) temSemBase = true;
+    lista.appendChild(criarLinhaComparacao(linha));
+  }
+
+  cartao.appendChild(titulo);
+  cartao.appendChild(ajuda);
+  cartao.appendChild(lista);
+
+  const rodape = document.createElement("div");
+  rodape.className = "financas-comparacao-rodape";
+
+  const legenda = document.createElement("p");
+  legenda.textContent = "Cores: verde = melhora; vermelho = piora.";
+  rodape.appendChild(legenda);
+
+  if (temSemBase) {
+    const nota = document.createElement("p");
+    nota.className = "financas-comparacao-nota";
+    nota.textContent =
+      "Sem base = não houve movimento no mês anterior nesse grupo.";
+    rodape.appendChild(nota);
+  }
+
+  cartao.appendChild(rodape);
+  return cartao;
+}
+
+function criarLinhaComparacao({ rotulo, bloco, tipo }) {
+  const item = document.createElement("li");
+  item.className = "financas-comparacao-item";
+
+  const topo = document.createElement("div");
+  topo.className = "financas-comparacao-topo";
+
+  const nome = document.createElement("span");
+  nome.className = "financas-comparacao-rotulo";
+  nome.textContent = rotulo;
+
+  const atual = document.createElement("span");
+  atual.className = "financas-comparacao-atual";
+  atual.textContent = formatarCentavos(bloco.atualCentavos);
+
+  topo.appendChild(nome);
+  topo.appendChild(atual);
+
+  const base = document.createElement("div");
+  base.className = "financas-comparacao-base";
+
+  const anterior = document.createElement("span");
+  anterior.textContent = `Antes: ${formatarCentavos(bloco.anteriorCentavos)}`;
+
+  const variacao = document.createElement("span");
+  variacao.className =
+    `financas-comparacao-variacao${classeVariacaoComparacao(bloco, tipo)}`;
+  variacao.textContent = formatarVariacaoComparacao(bloco);
+
+  base.appendChild(anterior);
+  base.appendChild(variacao);
+
+  item.appendChild(topo);
+  item.appendChild(base);
+  return item;
+}
+
+// Verde quando a mudança é boa, vermelho quando é ruim.
+// Em despesas, cair é bom; em receitas e saldo, subir é bom.
+function classeVariacaoComparacao(bloco, tipo) {
+  if (bloco.diferencaCentavos === 0) return "";
+
+  const melhorou = tipo === "despesas"
+    ? bloco.diferencaCentavos < 0
+    : bloco.diferencaCentavos > 0;
+
+  return melhorou ? " positivo" : " negativo";
+}
+
+function formatarVariacaoComparacao(bloco) {
+  if (bloco.diferencaCentavos === 0) {
+    return "sem variação";
+  }
+
+  const subiu = bloco.diferencaCentavos > 0;
+  const seta = subiu ? "↑" : "↓";
+  const sinal = subiu ? "+" : "−";
+  const valor = `${sinal}${formatarCentavos(Math.abs(bloco.diferencaCentavos))}`;
+
+  let percentual;
+
+  if (bloco.percentual === null) {
+    percentual = "sem base";
+  } else if (bloco.percentual === 0) {
+    percentual = "menos de 0,1%";
+  } else {
+    const sinalPercentual = bloco.percentual > 0 ? "+" : "−";
+    percentual =
+      `${sinalPercentual}${formatarPercentual(Math.abs(bloco.percentual))}%`;
+  }
+
+  return `${seta} ${valor} (${percentual})`;
+}
+
+function formatarPercentual(valor) {
+  return Number(valor).toLocaleString("pt-BR", {
+    maximumFractionDigits: 1
+  });
 }
 
 // --- Lista de lançamentos ---

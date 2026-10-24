@@ -124,7 +124,7 @@ function mostrarSobre() {
       <button class="modal-fechar" aria-label="Fechar">×</button>
     </div>
     <p class="modal-texto">
-      <strong>Versão:</strong> Fase 5 em andamento — finanças básicas<br>
+      <strong>Versão:</strong> Fase 5 concluída — finanças básicas<br>
       <strong>Stack:</strong> HTML + CSS + JavaScript (ES Modules)<br>
       <strong>Armazenamento:</strong> localStorage<br>
       <strong>Tema:</strong> Escuro, minimalista, fonte Inter<br>
