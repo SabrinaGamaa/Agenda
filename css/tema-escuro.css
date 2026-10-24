@@ -2117,6 +2117,191 @@ a:hover { text-decoration: underline; }
 .conta-mes-vazio { margin-top: var(--espaco); }
 .conta-mes-vazio .botao-principal { margin-top: var(--espaco); }
 
+/* --- Projeção do próximo mês --- */
+.projecao-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--espaco);
+  margin-bottom: var(--espaco);
+}
+
+.projecao-cabecalho h2 {
+  margin: 0;
+}
+
+.projecao-subtitulo {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--texto-fraco);
+  line-height: 1.4;
+}
+
+.projecao-grade {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espaco);
+}
+
+.projecao-bloco {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espaco-pequeno);
+  min-width: 0;
+  padding: 12px;
+  border-radius: var(--raio-pequeno);
+}
+
+.projecao-bloco.previsto {
+  background: rgba(255,255,255,.015);
+  border: 1px dashed var(--borda-forte);
+}
+
+.projecao-bloco.realizado {
+  background: var(--bg-input);
+  border: 1px solid var(--borda);
+}
+
+.projecao-bloco-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-pequeno);
+  flex-wrap: wrap;
+}
+
+.projecao-bloco-titulo {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.projecao-bloco.previsto .projecao-bloco-titulo {
+  color: var(--texto-fraco);
+}
+
+.projecao-selo {
+  padding: 2px 8px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--texto-fraco);
+  white-space: nowrap;
+}
+
+.projecao-bloco.previsto .projecao-selo {
+  border-style: dashed;
+}
+
+.projecao-bloco.realizado .projecao-selo {
+  background: var(--acento-suave);
+  border-color: rgba(107,70,193,.35);
+  color: var(--texto-suave);
+}
+
+.projecao-linhas {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.projecao-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espaco-pequeno);
+  padding-top: 6px;
+  border-top: 1px solid var(--borda);
+}
+
+.projecao-linha:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.projecao-linha-rotulo {
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+}
+
+.projecao-linha-valor {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.projecao-linha-valor.receita { color: var(--receita); }
+.projecao-linha-valor.despesa { color: var(--despesa); }
+.projecao-linha-valor.saldo.positivo { color: var(--receita); }
+.projecao-linha-valor.saldo.negativo { color: var(--despesa); }
+
+.projecao-bloco.previsto .projecao-linha-valor {
+  opacity: .8;
+}
+
+.projecao-bloco-ajuda {
+  margin: 0;
+  font-size: 0.7rem;
+  color: var(--texto-fraco);
+  line-height: 1.35;
+}
+
+.projecao-base {
+  display: grid;
+  gap: 4px;
+  margin-top: var(--espaco);
+  padding-top: var(--espaco);
+  border-top: 1px solid var(--borda);
+}
+
+.projecao-base-titulo {
+  margin: 0 0 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.projecao-base-linha,
+.projecao-nota {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--texto-fraco);
+  line-height: 1.45;
+}
+
+.projecao-aviso {
+  margin: 0;
+  padding: 8px 10px;
+  background: var(--bg-input);
+  border-left: 2px solid var(--acento);
+  border-radius: 0 var(--raio-pequeno) var(--raio-pequeno) 0;
+  font-size: 0.75rem;
+  color: var(--texto-suave);
+  line-height: 1.45;
+}
+
+.projecao-nota {
+  padding-top: 2px;
+  color: var(--texto-fraco);
+}
+
+.projecao-vazio {
+  margin-top: 0;
+}
+
+.projecao-vazio .botao-principal {
+  margin-top: var(--espaco);
+}
+
 /* Aviso de duplicata dentro do formulário */
 .aviso-duplicata {
   display: flex;
@@ -2142,6 +2327,19 @@ a:hover { text-decoration: underline; }
 
   .conta-mes-resumo {
     grid-template-columns: 1fr;
+  }
+
+  .projecao-grade {
+    grid-template-columns: 1fr;
+  }
+
+  .projecao-cabecalho {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .projecao-cabecalho .botao-discreto {
+    width: 100%;
   }
 
   .financas-barra {

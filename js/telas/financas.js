@@ -23,7 +23,8 @@ import {
   resumoContasDoMes,
   registrarPagamento,
   atualizarPagamento,
-  excluirPagamento
+  excluirPagamento,
+  projetarMes
 } from "../regras/contas-fixas.js";
 import { criarFormularioLancamento } from "../componentes/formulario-lancamento.js";
 import { criarFormularioPagamento } from "../componentes/formulario-pagamento.js";
@@ -61,6 +62,7 @@ export function desenharFinancas(estado, mensagem = null) {
     conteudo.appendChild(relatorios);
   }
 
+  conteudo.appendChild(criarCartaoProjecao(estado));
   conteudo.appendChild(criarCartaoLista(estado));
 }
 
@@ -450,6 +452,251 @@ function criarItemContaDoMes(estado, conta) {
   }
 
   return item;
+}
+
+// --- Projeção do próximo mês ---
+
+// A competência projetada é sempre a seguinte à exibida. O bloco previsto é
+// uma estimativa (contas fixas ativas + média variável); o realizado contém
+// apenas lançamentos já registrados no mês alvo. Os dois nunca são somados.
+function criarCartaoProjecao(estado) {
+  const competenciaProjetada = somarCompetencias(competenciaAtual, 1);
+  const projecao = projetarMes(estado, competenciaProjetada);
+
+  const cartao = document.createElement("section");
+  cartao.className = "cartao projecao";
+
+  if (!projecao) {
+    const aviso = document.createElement("p");
+    aviso.className = "projecao-aviso";
+    aviso.textContent = "Não foi possível calcular a projeção do próximo mês.";
+    cartao.appendChild(aviso);
+    return cartao;
+  }
+
+  const cabecalho = document.createElement("div");
+  cabecalho.className = "projecao-cabecalho";
+
+  const blocoTitulo = document.createElement("div");
+
+  const titulo = document.createElement("h2");
+  titulo.textContent = "Projeção do próximo mês";
+
+  const subtitulo = document.createElement("p");
+  subtitulo.className = "projecao-subtitulo";
+  subtitulo.textContent =
+    `${formatarCompetencia(competenciaProjetada)} · previsto separado do realizado.`;
+
+  blocoTitulo.appendChild(titulo);
+  blocoTitulo.appendChild(subtitulo);
+
+  const abrirMes = document.createElement("button");
+  abrirMes.type = "button";
+  abrirMes.className = "botao-discreto";
+  abrirMes.textContent = `Ver ${nomeDoMes(competenciaProjetada)}`;
+  abrirMes.setAttribute(
+    "aria-label",
+    `Ir para ${formatarCompetencia(competenciaProjetada)}`
+  );
+  abrirMes.addEventListener("click", () => {
+    irParaCompetencia(estado, competenciaProjetada);
+  });
+
+  cabecalho.appendChild(blocoTitulo);
+  cabecalho.appendChild(abrirMes);
+  cartao.appendChild(cabecalho);
+
+  const semDados =
+    projecao.contasFixas.quantidade === 0 &&
+    !projecao.incluiVariaveis &&
+    projecao.realizado.quantidadeLancamentos === 0;
+
+  if (semDados) {
+    cartao.appendChild(criarVazioProjecao(estado, competenciaProjetada));
+    return cartao;
+  }
+
+  const grade = document.createElement("div");
+  grade.className = "projecao-grade";
+
+  grade.appendChild(criarBlocoProjecao({
+    titulo: "Previsto",
+    selo: "estimativa",
+    classe: "previsto",
+    receitasCentavos: projecao.receitasPrevistasCentavos,
+    despesasCentavos: projecao.despesasPrevistasCentavos,
+    saldoCentavos: projecao.saldoPrevistoCentavos,
+    ajuda: projecao.incluiVariaveis
+      ? "Contas fixas ativas + média variável."
+      : "Contas fixas ativas; sem histórico variável suficiente."
+  }));
+
+  const realizado = projecao.realizado;
+  const quantidade = realizado.quantidadeLancamentos;
+
+  grade.appendChild(criarBlocoProjecao({
+    titulo: "Realizado",
+    selo: "registros",
+    classe: "realizado",
+    receitasCentavos: realizado.receitasCentavos,
+    despesasCentavos: realizado.despesasCentavos,
+    saldoCentavos: realizado.saldoCentavos,
+    ajuda: quantidade === 0
+      ? "Nenhum lançamento com data no mês alvo ainda."
+      : `${quantidade} ${quantidade === 1 ? "lançamento" : "lançamentos"} com data no mês alvo.`
+  }));
+
+  cartao.appendChild(grade);
+  cartao.appendChild(criarBaseProjecao(projecao));
+  return cartao;
+}
+
+function criarVazioProjecao(estado, competencia) {
+  const vazio = document.createElement("div");
+  vazio.className = "estado-vazio projecao-vazio";
+
+  const mensagem = document.createElement("p");
+  mensagem.textContent =
+    `Ainda não há dados para projetar ${formatarCompetencia(competencia).toLowerCase()}. ` +
+    "Cadastre contas fixas ou registre lançamentos variáveis.";
+
+  const botao = document.createElement("button");
+  botao.type = "button";
+  botao.className = "botao-principal botao-pequeno";
+  botao.textContent = "Gerenciar contas fixas";
+  botao.addEventListener("click", () => abrirContasFixas(estado));
+
+  vazio.appendChild(mensagem);
+  vazio.appendChild(botao);
+  return vazio;
+}
+
+function criarBlocoProjecao({
+  titulo,
+  selo,
+  classe,
+  receitasCentavos,
+  despesasCentavos,
+  saldoCentavos,
+  ajuda
+}) {
+  const bloco = document.createElement("section");
+  bloco.className = `projecao-bloco ${classe}`;
+
+  const topo = document.createElement("div");
+  topo.className = "projecao-bloco-topo";
+
+  const rotulo = document.createElement("h3");
+  rotulo.className = "projecao-bloco-titulo";
+  rotulo.textContent = titulo;
+
+  const seloElemento = document.createElement("span");
+  seloElemento.className = "projecao-selo";
+  seloElemento.textContent = selo;
+
+  topo.appendChild(rotulo);
+  topo.appendChild(seloElemento);
+
+  const linhas = document.createElement("dl");
+  linhas.className = "projecao-linhas";
+  linhas.appendChild(criarLinhaProjecao("Receitas", receitasCentavos, "receita"));
+  linhas.appendChild(criarLinhaProjecao("Despesas", despesasCentavos, "despesa"));
+  linhas.appendChild(criarLinhaProjecao("Saldo", saldoCentavos, "saldo"));
+
+  const ajudaElemento = document.createElement("p");
+  ajudaElemento.className = "projecao-bloco-ajuda";
+  ajudaElemento.textContent = ajuda;
+
+  bloco.appendChild(topo);
+  bloco.appendChild(linhas);
+  bloco.appendChild(ajudaElemento);
+  return bloco;
+}
+
+function criarLinhaProjecao(rotulo, valorCentavos, tipo) {
+  const linha = document.createElement("div");
+  linha.className = "projecao-linha";
+
+  const nome = document.createElement("dt");
+  nome.className = "projecao-linha-rotulo";
+  nome.textContent = rotulo;
+
+  const valor = document.createElement("dd");
+  const classeValor = tipo === "saldo"
+    ? `saldo${classeSaldo(valorCentavos)}`
+    : tipo;
+  valor.className = `projecao-linha-valor ${classeValor}`;
+  valor.textContent = formatarCentavos(valorCentavos);
+
+  linha.appendChild(nome);
+  linha.appendChild(valor);
+  return linha;
+}
+
+function criarBaseProjecao(projecao) {
+  const base = document.createElement("div");
+  base.className = "projecao-base";
+
+  const titulo = document.createElement("h3");
+  titulo.className = "projecao-base-titulo";
+  titulo.textContent = "Como calculamos";
+  base.appendChild(titulo);
+
+  const fixas = projecao.contasFixas;
+  const linhaFixas = document.createElement("p");
+  linhaFixas.className = "projecao-base-linha";
+
+  if (fixas.quantidade === 0) {
+    linhaFixas.textContent = "Contas fixas: nenhuma conta ativa no mês alvo.";
+  } else {
+    linhaFixas.textContent =
+      `Contas fixas: ${fixas.quantidade} ${fixas.quantidade === 1 ? "ativa" : "ativas"} · ` +
+      `receitas ${formatarCentavos(fixas.receitasCentavos)} · ` +
+      `despesas ${formatarCentavos(fixas.despesasCentavos)}.`;
+  }
+
+  base.appendChild(linhaFixas);
+
+  if (projecao.incluiVariaveis) {
+    const variaveis = projecao.variaveis;
+    const linhaVariaveis = document.createElement("p");
+    linhaVariaveis.className = "projecao-base-linha";
+    linhaVariaveis.textContent =
+      `Variáveis: ${descreverMediaVariavel(variaveis)} · ` +
+      `receitas ${formatarCentavos(variaveis.receitasCentavos)} · ` +
+      `despesas ${formatarCentavos(variaveis.despesasCentavos)}.`;
+    base.appendChild(linhaVariaveis);
+  } else {
+    const aviso = document.createElement("p");
+    aviso.className = "projecao-aviso";
+    aviso.textContent =
+      "Histórico insuficiente para variáveis: a projeção inclui apenas as contas fixas. " +
+      "Registre lançamentos manuais em meses anteriores para ativar a média.";
+    base.appendChild(aviso);
+  }
+
+  const nota = document.createElement("p");
+  nota.className = "projecao-nota";
+  nota.textContent =
+    "Previsto e realizado são blocos independentes; os valores não são somados.";
+  base.appendChild(nota);
+
+  return base;
+}
+
+function descreverMediaVariavel(variaveis) {
+  const quantidade = variaveis.mesesUsados;
+
+  if (quantidade === 3) {
+    return "média dos últimos 3 meses com movimento";
+  }
+
+  const rotulo = quantidade === 1 ? "mês com movimento" : "meses com movimento";
+  return `média de ${quantidade} ${rotulo} na janela de 3 meses`;
+}
+
+function nomeDoMes(competencia) {
+  return formatarCompetencia(competencia).split(" de ")[0].toLowerCase();
 }
 
 // --- Relatórios do mês ---
