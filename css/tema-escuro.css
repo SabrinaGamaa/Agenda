@@ -360,6 +360,20 @@ a:hover { text-decoration: underline; }
   margin-top: 0;
 }
 
+.formulario-conta-fixa {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--espaco-pequeno);
+  margin-top: 0;
+}
+
+.conta-fixa-ajuda {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--texto-fraco);
+  line-height: 1.4;
+}
+
 .campo {
   display: flex;
   flex-direction: column;
@@ -382,7 +396,9 @@ a:hover { text-decoration: underline; }
 .formulario-meta select,
 .formulario-meta textarea,
 .formulario-lancamento input,
-.formulario-lancamento select {
+.formulario-lancamento select,
+.formulario-conta-fixa input,
+.formulario-conta-fixa select {
   font: inherit;
   padding: 10px 12px;
   border: 1px solid var(--borda);
@@ -400,7 +416,8 @@ a:hover { text-decoration: underline; }
 .formulario-tarefa input::placeholder,
 .formulario-meta input::placeholder,
 .formulario-meta textarea::placeholder,
-.formulario-lancamento input::placeholder {
+.formulario-lancamento input::placeholder,
+.formulario-conta-fixa input::placeholder {
   color: var(--texto-fraco);
 }
 
@@ -410,7 +427,9 @@ a:hover { text-decoration: underline; }
 .formulario-meta select:focus,
 .formulario-meta textarea:focus,
 .formulario-lancamento input:focus,
-.formulario-lancamento select:focus {
+.formulario-lancamento select:focus,
+.formulario-conta-fixa input:focus,
+.formulario-conta-fixa select:focus {
   outline: none;
   border-color: var(--acento);
   box-shadow: 0 0 0 3px var(--acento-suave);
@@ -441,7 +460,8 @@ a:hover { text-decoration: underline; }
 /* O atributo hidden precisa vencer o display:flex de .campo. */
 .formulario-tarefa [hidden],
 .formulario-meta [hidden],
-.formulario-lancamento [hidden] { display: none !important; }
+.formulario-lancamento [hidden],
+.formulario-conta-fixa [hidden] { display: none !important; }
 
 /* --- Bloco de repetição --- */
 .recorrencia {
@@ -579,7 +599,8 @@ a:hover { text-decoration: underline; }
 @media (max-width: 560px) {
   .formulario-tarefa,
   .formulario-meta,
-  .formulario-lancamento { grid-template-columns: 1fr; }
+  .formulario-lancamento,
+  .formulario-conta-fixa { grid-template-columns: 1fr; }
   .recorrencia-grade,
   .meta-financeiro-grade { grid-template-columns: 1fr; }
 }
@@ -631,7 +652,8 @@ a:hover { text-decoration: underline; }
 
 .modal .formulario-tarefa,
 .modal .formulario-meta,
-.modal .formulario-lancamento { margin-top: 0; }
+.modal .formulario-lancamento,
+.modal .formulario-conta-fixa { margin-top: 0; }
 
 /* ==========================================================================
    LISTA DE TAREFAS (tela de dia)
@@ -1531,6 +1553,14 @@ a:hover { text-decoration: underline; }
   font-size: 0.85rem;
 }
 
+.financas-barra-acoes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--espaco-pequeno);
+  flex-wrap: wrap;
+}
+
 /* Navegação de mês */
 .financas-periodo {
   display: flex;
@@ -1840,6 +1870,8 @@ a:hover { text-decoration: underline; }
   display: flex;
   align-items: center;
   gap: var(--espaco-pequeno);
+  min-width: 0;
+  max-width: 100%;
   padding: 10px 12px;
   background: var(--bg-input);
   border: 1px solid var(--borda);
@@ -1855,6 +1887,17 @@ a:hover { text-decoration: underline; }
 }
 .financas-item.receita { border-left-color: var(--receita); }
 .financas-item.despesa { border-left-color: var(--despesa); }
+
+.conta-fixa-item.inativa {
+  opacity: .68;
+  border-left-color: var(--borda-forte);
+}
+
+/* Nesta tela de cadastro as ações ficam sempre visíveis: editar e excluir
+   são o objetivo principal, diferente da lista de lançamentos. */
+.conta-fixa-item .financas-item-acoes {
+  opacity: 1;
+}
 
 .financas-item-info {
   flex: 1;
@@ -1951,8 +1994,13 @@ a:hover { text-decoration: underline; }
     align-items: stretch;
   }
 
-  .financas-barra .botao-principal {
+  .financas-barra-acoes {
     width: 100%;
+  }
+
+  .financas-barra-acoes .botao-principal,
+  .financas-barra-acoes .botao-secundario {
+    flex: 1 1 100%;
   }
 
   .financas-periodo {
@@ -2232,4 +2280,20 @@ a:hover { text-decoration: underline; }
 [aria-label]:hover::after {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+/* Ações no fim do cartão: alinhar o balão à direita para não criar
+   rolagem horizontal quando o botão está perto da borda. */
+.financas-item-acoes [aria-label]::after {
+  left: auto;
+  right: 0;
+  transform: translateY(4px);
+}
+.financas-item-acoes [aria-label]:hover::after {
+  transform: translateY(0);
+}
+
+/* Em telas de toque não há hover: esconder os balões evita overflow. */
+@media (hover: none) {
+  [aria-label]::after { display: none; }
 }

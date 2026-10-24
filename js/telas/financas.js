@@ -21,6 +21,7 @@ import {
 import { criarFormularioLancamento } from "../componentes/formulario-lancamento.js";
 import { abrirModal } from "../componentes/modal.js";
 import { salvar } from "../dados/armazenamento.js";
+import { desenharContasFixas } from "./contas-fixas.js";
 
 // Mês exibido. Começa no mês atual e só muda pela navegação ‹ ›.
 // Fica em memória: ao recarregar, voltamos para o mês atual.
@@ -73,15 +74,34 @@ function criarBarra(estado) {
   blocoTexto.appendChild(titulo);
   blocoTexto.appendChild(subtitulo);
 
+  const acoes = document.createElement("div");
+  acoes.className = "financas-barra-acoes";
+
+  const contasFixas = document.createElement("button");
+  contasFixas.type = "button";
+  contasFixas.className = "botao-secundario";
+  contasFixas.textContent = "Contas fixas";
+  contasFixas.addEventListener("click", () => abrirContasFixas(estado));
+
   const novo = document.createElement("button");
   novo.type = "button";
   novo.className = "botao-principal";
   novo.textContent = "+ Novo lançamento";
   novo.addEventListener("click", () => abrirFormularioNovoLancamento(estado));
 
+  acoes.appendChild(contasFixas);
+  acoes.appendChild(novo);
+
   barra.appendChild(blocoTexto);
-  barra.appendChild(novo);
+  barra.appendChild(acoes);
   return barra;
+}
+
+// Abre o cadastro de contas fixas sem sair da aba Finanças.
+function abrirContasFixas(estado) {
+  desenharContasFixas(estado, {
+    aoVoltar: () => desenharFinancas(estado)
+  });
 }
 
 // --- Navegação de mês ---
