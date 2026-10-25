@@ -1,4 +1,5 @@
-// Tela inicial (Home): alternador Mês | Semana + filtros + painel lateral.
+// Tela inicial (Home): painel principal + alternador Mês | Semana + filtros.
+// - Painel principal: tarefas, metas, finanças do mês e contas a vencer.
 // - Visão de mês: calendário com bolinhas de prioridade por dia.
 // - Visão de semana: colunas de domingo a sábado com as tarefas de cada dia.
 // Clicar num dia leva para a tela de tarefas daquele dia (o app.js cuida da troca).
@@ -11,6 +12,7 @@ import {
 import { criarVisaoSemana } from "../componentes/visao-semana.js";
 import { criarBarraFiltros } from "../componentes/barra-filtros.js";
 import { criarPainelLateral } from "../componentes/painel-lateral.js";
+import { criarPainelPrincipal } from "../componentes/painel-principal.js";
 
 // --- Estado da tela (em memória; ao recarregar, voltamos para hoje) ---
 let visaoAtual = "mes";       // "mes" | "semana"
@@ -20,18 +22,26 @@ let semanaReferencia = null;  // qualquer dia da semana exibida ("AAAA-MM-DD")
 // Referências atuais (para atualização pontual, sem redesenhar tudo)
 let estadoAtual = null;
 let aoSelecionarDiaAtual = null;
+let aoAbrirMetasAtual = null;
+let aoAbrirFinancasAtual = null;
 let calendarioAtual = null;
 let semanaAtual = null;
 let painelLateralAtual = null;
+let painelPrincipalAtual = null;
 
 /**
  * Desenha a tela inicial (Home).
  * @param {Object} estado - estado global
  * @param {Function} aoSelecionarDia - callback(dataISO) para ir para a tela de tarefas
+ * @param {Object} [opcoes]
+ * @param {Function} [opcoes.aoAbrirMetas] - callback() para a aba Metas
+ * @param {Function} [opcoes.aoAbrirFinancas] - callback(competencia?) para Finanças
  */
-export function desenharInicio(estado, aoSelecionarDia) {
+export function desenharInicio(estado, aoSelecionarDia, opcoes = {}) {
   estadoAtual = estado;
   aoSelecionarDiaAtual = aoSelecionarDia;
+  aoAbrirMetasAtual = opcoes.aoAbrirMetas ?? null;
+  aoAbrirFinancasAtual = opcoes.aoAbrirFinancas ?? null;
 
   // Primeira carga: começa no mês/semana de hoje.
   // Depois disso, respeita a navegação (‹ ›) que o usuário fez.
@@ -56,6 +66,14 @@ function renderizar() {
     aoMudar: renderizar
   }));
   conteudo.appendChild(barra);
+
+  // Painel principal: resumo dos quatro blocos da Fase 7.
+  painelPrincipalAtual = criarPainelPrincipal(estado, {
+    aoAbrirDia: aoSelecionarDiaAtual,
+    aoAbrirMetas: aoAbrirMetasAtual,
+    aoAbrirFinancas: aoAbrirFinancasAtual
+  });
+  conteudo.appendChild(painelPrincipalAtual);
 
   // Callback único para abrir um dia (vindo do calendário ou da semana)
   const aoClicarDia = (dataISO) => {
@@ -134,8 +152,8 @@ function primeiroDiaDoMes(dataISO) {
 }
 
 /**
- * Atualiza os indicadores (bolinhas do mês / cartões da semana) e o painel
- * lateral após mudanças nas tarefas (criar, editar, concluir, excluir).
+ * Atualiza os indicadores (bolinhas do mês / cartões da semana), o painel
+ * principal e o painel lateral após mudanças nos dados.
  */
 export function atualizarHome(estado) {
   if (calendarioAtual && calendarioAtual.atualizarIndicadores) {
@@ -143,6 +161,9 @@ export function atualizarHome(estado) {
   }
   if (semanaAtual && semanaAtual.atualizar) {
     semanaAtual.atualizar();
+  }
+  if (painelPrincipalAtual && painelPrincipalAtual.atualizar) {
+    painelPrincipalAtual.atualizar();
   }
   if (painelLateralAtual && painelLateralAtual.atualizar) {
     painelLateralAtual.atualizar();

@@ -2,7 +2,12 @@
 // As telas nunca falam com o localStorage diretamente; isso permite, no futuro,
 // trocar o armazenamento (IndexedDB, servidor...) sem mexer nas telas.
 
-import { tarefasDeExemplo } from "./exemplo.js";
+import {
+  tarefasDeExemplo,
+  metasDeExemplo,
+  lancamentosDeExemplo,
+  contasFixasDeExemplo
+} from "./exemplo.js";
 
 const CHAVE = "painel.dados";
 const CHAVE_BACKUP_CORROMPIDO = "painel.dados.corrompido";
@@ -100,9 +105,9 @@ export function criarEstadoInicial() {
       categoriasFinancas: [...CATEGORIAS_FINANCAS_PADRAO]
     },
     tarefas: tarefasDeExemplo(),
-    metas: [],
-    lancamentos: [],
-    contasFixas: [],
+    metas: metasDeExemplo(),
+    lancamentos: lancamentosDeExemplo(),
+    contasFixas: contasFixasDeExemplo(),
     pagamentos: []
   };
 }

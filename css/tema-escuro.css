@@ -1043,6 +1043,229 @@ a:hover { text-decoration: underline; }
 }
 
 /* ==========================================================================
+   PAINEL PRINCIPAL (HOME)
+   ========================================================================== */
+.painel-principal {
+  margin-bottom: var(--espaco);
+}
+
+.painel-principal-grade {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--espaco);
+}
+
+.painel-bloco {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: var(--espaco);
+  background: var(--bg-elevado);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra);
+}
+
+.painel-bloco-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espaco-pequeno);
+  margin-bottom: var(--espaco-pequeno);
+}
+
+.painel-bloco-topo h2 {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--texto-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.painel-bloco-link {
+  padding: 0;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--acento);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.painel-bloco-link:hover {
+  color: var(--texto);
+  text-decoration: underline;
+}
+
+.painel-bloco-periodo {
+  margin: -2px 0 var(--espaco-pequeno);
+  font-size: 0.72rem;
+  color: var(--texto-fraco);
+}
+
+.painel-subtitulo {
+  margin: var(--espaco-pequeno) 0 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--texto-fraco);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.painel-subtitulo:first-of-type {
+  margin-top: 0;
+}
+
+.painel-item-botao {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.painel-item-botao:disabled,
+.painel-meta-botao:disabled {
+  cursor: default;
+}
+
+.painel-item-botao:focus-visible,
+.painel-meta-botao:focus-visible,
+.painel-bloco-link:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.painel-item-titulo,
+.painel-item-meta {
+  display: block;
+}
+
+.painel-item-valor {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.painel-item-valor.receita { color: var(--receita); }
+.painel-item-valor.despesa { color: var(--despesa); }
+
+.painel-vazio {
+  margin: 0;
+  padding: 10px;
+  color: var(--texto-fraco);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  border: 1px dashed var(--borda);
+  border-radius: var(--raio-pequeno);
+}
+
+.painel-mais {
+  margin: 6px 0 0;
+  color: var(--texto-fraco);
+  font-size: 0.7rem;
+}
+
+.painel-financas-linhas {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.painel-financa-linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espaco-pequeno);
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.painel-financa-linha strong {
+  color: var(--texto);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.painel-financa-linha strong.receita { color: var(--receita); }
+.painel-financa-linha strong.despesa { color: var(--despesa); }
+.painel-financa-linha strong.saldo.positivo { color: var(--receita); }
+.painel-financa-linha strong.saldo.negativo { color: var(--despesa); }
+
+.painel-meta-botao {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  padding: 8px 10px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: var(--bg-input);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  cursor: pointer;
+  transition: border-color .15s ease;
+}
+
+.painel-meta-botao:hover {
+  border-color: var(--borda-forte);
+}
+
+.painel-meta-titulo {
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.painel-meta-info {
+  font-size: 0.72rem;
+  color: var(--texto-fraco);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.painel-progresso {
+  display: block;
+  height: 6px;
+  margin-top: 3px;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+}
+
+.painel-progresso > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--acento), var(--acento-forte));
+  border-radius: inherit;
+}
+
+@media (max-width: 1100px) {
+  .painel-principal-grade {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .painel-principal-grade {
+    grid-template-columns: 1fr;
+  }
+
+  .painel-bloco {
+    padding: 14px;
+  }
+}
+
+/* ==========================================================================
    HOME: BARRA DE VISÃO E FILTROS
    ========================================================================== */
 

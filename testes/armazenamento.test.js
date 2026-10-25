@@ -2,7 +2,12 @@
 
 import { describe } from "./testes.js";
 import { carregar, salvar, criarEstadoInicial } from "../js/dados/armazenamento.js";
-import { tarefasDeExemplo } from "../js/dados/exemplo.js";
+import {
+  tarefasDeExemplo,
+  metasDeExemplo,
+  lancamentosDeExemplo,
+  contasFixasDeExemplo
+} from "../js/dados/exemplo.js";
 
 describe("armazenamento", (suite) => {
   const CHAVE = "painel.dados";
@@ -22,6 +27,9 @@ describe("armazenamento", (suite) => {
     Assert.true(Array.isArray(estado.lancamentos));
     Assert.true(Array.isArray(estado.contasFixas));
     Assert.true(Array.isArray(estado.pagamentos));
+    Assert.equals(estado.metas.length, metasDeExemplo().length, "tem metas de exemplo");
+    Assert.equals(estado.lancamentos.length, lancamentosDeExemplo().length, "tem lançamentos de exemplo");
+    Assert.equals(estado.contasFixas.length, contasFixasDeExemplo().length, "tem contas fixas de exemplo");
     Assert.true(estado.config.categoriasTarefas.length > 0);
     Assert.true(estado.config.categoriasFinancas.length > 0);
   });

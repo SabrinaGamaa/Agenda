@@ -1,5 +1,5 @@
 // Entry point do Meu Painel Pessoal.
-// Inicia no Home (calendário + painel lateral).
+// Inicia no Home (painel principal + calendário + painel lateral).
 // Clicar num dia no calendário → mostra a tela de tarefas daquele dia.
 // A tela de tarefas tem botão "Home" no cabeçalho para voltar.
 // Navegação principal: Agenda (calendário/dia), Metas e Finanças.
@@ -124,13 +124,13 @@ function mostrarSobre() {
       <button class="modal-fechar" aria-label="Fechar">×</button>
     </div>
     <p class="modal-texto">
-      <strong>Versão:</strong> Fase 6 concluída — contas fixas e projeções<br>
+      <strong>Versão:</strong> Fase 7 concluída — painel principal<br>
       <strong>Stack:</strong> HTML + CSS + JavaScript (ES Modules)<br>
       <strong>Armazenamento:</strong> localStorage<br>
       <strong>Tema:</strong> Escuro, minimalista, fonte Inter<br>
       <br>
-      Organizador pessoal com agenda, metas, finanças, contas fixas e projeções.
-      Feito como projeto de aprendizagem.
+      Organizador pessoal com painel principal, agenda, metas, finanças,
+      contas fixas e projeções. Feito como projeto de aprendizagem.
     </p>
     <div class="grupo-botoes">
       <button type="button" class="botao-principal" id="btn-fechar-sobre">Fechar</button>
@@ -144,13 +144,16 @@ function mostrarSobre() {
   modal.addEventListener("close", () => modal.remove());
 }
 
-/** Mostra a tela inicial (calendário + painel lateral) */
+/** Mostra a tela inicial (painel principal + calendário + painel lateral) */
 export function mostrarInicio() {
   telaAtual = "inicio";
   // Garante que o header reflita o estado inicial
   fixarBotaoHome();
   desenharInicio(estado, (dataISO) => {
     mostrarTarefas(dataISO);
+  }, {
+    aoAbrirMetas: mostrarMetas,
+    aoAbrirFinancas: mostrarFinancas
   });
   atualizarCabecalho();
 }
@@ -172,10 +175,13 @@ export function mostrarMetas() {
   atualizarCabecalho();
 }
 
-/** Mostra a tela de finanças */
-export function mostrarFinancas() {
+/**
+ * Mostra a tela de finanças.
+ * @param {string|null} competencia - mês opcional ("AAAA-MM") para abrir direto.
+ */
+export function mostrarFinancas(competencia = null) {
   telaAtual = "financas";
-  desenharFinancas(estado);
+  desenharFinancas(estado, null, competencia);
   fixarBotaoHome();
   atualizarCabecalho();
 }

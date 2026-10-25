@@ -16,6 +16,7 @@ import {
   compararComMesAnterior,
   possivelDuplicata,
   competenciaDaData,
+  competenciaValida,
   somarCompetencias,
   formatarCompetencia
 } from "../regras/financas.js";
@@ -37,8 +38,10 @@ import { desenharContasFixas } from "./contas-fixas.js";
 // Fica em memória: ao recarregar, voltamos para o mês atual.
 let competenciaAtual = null;
 
-export function desenharFinancas(estado, mensagem = null) {
-  if (competenciaAtual === null) {
+export function desenharFinancas(estado, mensagem = null, competencia = null) {
+  if (competencia !== null && competenciaValida(competencia)) {
+    competenciaAtual = competencia;
+  } else if (competenciaAtual === null) {
     competenciaAtual = competenciaDaData(hojeISO());
   }
 
