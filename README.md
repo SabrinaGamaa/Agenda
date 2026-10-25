@@ -8,6 +8,8 @@ O plano completo do projeto (fases, modelo de dados, regras e critérios de conc
 
 **Fase 7 concluída — painel principal.** O Home agora abre com quatro blocos: **Hoje e próximas** (tarefas pendentes de hoje e dos próximos 7 dias), **Metas ativas** (com barra de progresso), **Finanças do mês** (receitas, despesas e saldo) e **Contas a vencer** (próximos 7 dias, inclusive quando a janela cruza o mês). Tarefas, metas e contas são clicáveis, e os links **Ver finanças** / **Ver contas** abrem a aba correspondente; quando não há dados, o bloco mostra uma orientação. O painel usa as mesmas regras puras das telas e foi testado com 500 registros fictícios (carga abaixo de 300 ms no ambiente de teste). A primeira execução também ganhou metas, lançamentos e contas fixas de exemplo.
 
+**Fase 8 em andamento — polimento, celular e backup.** A interface já tem ajustes responsivos, estados vazios e de erro, indicadores de foco e exportação com data no nome do arquivo. A verificação em larguras de 320 a 1024 px não encontrou rolagem horizontal; falta conferir o acesso em um celular real pela rede local.
+
 **Fase 6 concluída — contas fixas e projeções.** A aba **Finanças** agora tem uma tela interna de **contas fixas** (aluguel, salário, internet etc.) com ativação/desativação, início/fim e exclusão segura (bloqueada quando há pagamentos). O card **Contas fixas do mês** mostra o previsto, o pago e o em aberto por competência; o pagamento gera um lançamento real vinculado, que é atualizado ou removido junto com o pagamento. Um segundo pagamento da mesma conta na mesma competência é bloqueado. O card **Projeção do próximo mês** separa **previsto** (contas fixas ativas + média variável de até 3 meses anteriores) e **realizado** (lançamentos com data no mês alvo), sem somar os dois; sem histórico, avisa “histórico insuficiente”.
 
 **Fase 5 concluída — finanças básicas.** A aba **Finanças** permite criar, editar e excluir receitas e despesas, com data, valor, categoria e descrição. A tela mostra o resumo do mês (receitas, despesas e saldo), a lista agrupada por dia com o saldo de cada dia, navegação ‹ › entre meses e o botão **Este mês**. Antes de gravar um possível duplicata (mesmo tipo, valor e data), o sistema pede confirmação. Os valores ficam em centavos e são exibidos em reais. A tela também mostra os **totais por categoria** (barras e percentuais de despesas e receitas) e a **comparação com o mês anterior**, com a variação em R$ e em %. O relatório mensal é conferido por um teste automatizado com 20 lançamentos fictícios.
@@ -50,6 +52,23 @@ Depois abra o endereço mostrado pelo comando (geralmente `http://localhost:3000
 
 > Dica: se o `npx` não funcionar no PowerShell por causa de política de execução, use `npx.cmd serve .`.
 
+## Acesso pelo celular na rede local
+
+O computador e o celular precisam estar conectados à mesma rede Wi-Fi. No terminal do projeto, inicie o servidor aceitando conexões da rede local:
+
+```powershell
+py -m http.server 5501 --bind 0.0.0.0
+```
+
+No Windows, execute `ipconfig` e procure o **Endereço IPv4** do adaptador Wi-Fi ativo. No navegador do celular, abra `http://IP-DO-COMPUTADOR:5501/`, substituindo o trecho pelo endereço encontrado (por exemplo, `http://192.168.1.25:5501/`). Se o Firewall do Windows perguntar, permita o acesso somente em redes privadas. Use apenas uma rede confiável e mantenha os dados fictícios; o servidor local não oferece autenticação nem criptografia. Para encerrar, volte ao terminal e pressione `Ctrl+C`.
+
+## Backup e restauração
+
+- Para exportar, abra o menu **⋮** no cabeçalho e escolha **Exportar JSON**. O navegador baixa um arquivo chamado `painel-backup-AAAA-MM-DD.json`, com a data local da exportação.
+- Guarde uma cópia fora da pasta do projeto e exporte novamente após alterações importantes. O arquivo contém todos os dados do painel; use apenas dados fictícios neste projeto.
+- Para restaurar, abra **⋮ → Importar JSON** e selecione o arquivo de backup. A confirmação informa que a importação substitui todos os dados atuais. Antes de confirmar, exporte o estado atual caso queira poder recuperá-lo.
+- Se o arquivo não for JSON válido ou não tiver a estrutura compatível, a importação mostra um erro e não substitui o estado atual.
+
 ## Como testar (passo atual)
 
 1. Abra pela URL do servidor local (opções acima) — abre no **Home**, na visão **Mês**.
@@ -77,3 +96,5 @@ Depois abra o endereço mostrado pelo comando (geralmente `http://localhost:3000
 18. **Testes automatizados**: abra `http://localhost:5500/testes/testes.html` → "▶ Executar todos os testes" → veja ✅/❌ por suite.
 19. **Recarregue**: volta pro Home (visão Mês, mês de hoje); dados intactos.
 20. Console (`F12`): sem erros.
+21. **Backup**: exporte um JSON, confira a data no nome e importe o mesmo arquivo; após confirmar, confira se os dados continuam presentes. Para testar uma falha sem risco, tente importar um arquivo `.json` inválido e confirme que os dados atuais permanecem.
+22. **Celular**: siga "Acesso pelo celular na rede local". Confira Home, Agenda (mês e semana), Metas e Finanças em retrato e paisagem; navegue, abra formulários e confirme que não há conteúdo cortado nem rolagem horizontal. Se mudar a porta `5501`, use a nova porta no endereço do celular.
